@@ -6,9 +6,27 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+
+- **Makerspace site templates** (one Pico W per shop zone):
+  - [`makerspace-woodshop`](examples/sites/makerspace-woodshop.yaml) — dust collection, saw outlets, lighting
+  - [`makerspace-welding`](examples/sites/makerspace-welding.yaml) — fume extraction, welder outlets, grinding area
+  - [`makerspace-digifab`](examples/sites/makerspace-digifab.yaml) — laser exhaust, printer bench, electronics lighting
+  - [`makerspace.md`](examples/sites/makerspace.md) — multi-node architecture overview
+- **`rfid` example** — PN532 I2C member-card reader config contract (scan events, last UID, access hooks)
+- PN532 RFID blocks on all three makerspace zone configs (`sensors.rfid`, `access.mode: track`)
+- MkDocs **copyright footer** — `(c) Copyright Carefree Investments {year}` linking to [carefreeinv.com](https://carefreeinv.com) via `hooks/copyright.py`
+
+### Changed
+
+- [`examples/README.md`](examples/README.md) — makerspace zone index and `rfid` protocol entry
+- [`README.md`](README.md), [`config.example.yaml`](config.example.yaml) — mention makerspace zone templates
+- [`scripts/stage_docs.py`](scripts/stage_docs.py) — stage `rfid.md` into docs nav
+- [`workshop.md`](examples/sites/workshop.md) — cross-link to makerspace woodshop variant
+
 ### Planned
 
-- PWM, CAN, I2C expanders, Victron in unified daemon
+- PWM, CAN, I2C expanders, Victron, **RFID reader driver** in unified daemon
 - Pico W firmware / MicroPython port
 - MCP23017 expander driver
 

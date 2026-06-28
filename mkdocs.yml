@@ -1,6 +1,8 @@
 site_name: mqttpi
 site_url: https://carefreeinv.github.io/mqttpi/
 site_description: MQTT GPIO and sensor bridge for Raspberry Pi and Pico W — Home Assistant compatible by default.
+hooks:
+  - hooks/copyright.py
 repo_url: https://github.com/carefreeinv/mqttpi
 repo_name: carefreeinv/mqttpi
 theme:

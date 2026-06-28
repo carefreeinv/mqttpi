@@ -39,6 +39,7 @@ Runtime merges `secrets.yaml` onto `config.yaml`. Home Assistant MQTT **discover
 |--------|-----|---------|
 | `jbd-bms.yaml` | [jbd-bms.md](jbd-bms.md) | JBD BMS UART (Pi) |
 | `level-accelerometer.yaml` | [level-accelerometer.md](level-accelerometer.md) | I2C MPU6050 level |
+| `rfid.yaml` | [rfid.md](rfid.md) | PN532 member card reader (tracking + access hooks) |
 | `tpms.yaml` | [tpms.md](tpms.md) | Tire pressure (UART receiver) |
 | `can-vehicle.yaml` | [can-vehicle.md](can-vehicle.md) | OBD-II read @ 500k |
 | `can-rvc.yaml` | [can-rvc.md](can-rvc.md) | RV-C read/write @ 250k |
@@ -52,6 +53,10 @@ Runtime merges `secrets.yaml` onto `config.yaml`. Home Assistant MQTT **discover
 |--------|-----|
 | [house.yaml](sites/house.yaml) | [house.md](sites/house.md) |
 | [workshop.yaml](sites/workshop.yaml) | [workshop.md](sites/workshop.md) |
+| [makerspace.md](sites/makerspace.md) | Multi-zone makerspace overview (one Pico W per shop) |
+| [makerspace-woodshop.yaml](sites/makerspace-woodshop.yaml) | [makerspace-woodshop.md](sites/makerspace-woodshop.md) |
+| [makerspace-welding.yaml](sites/makerspace-welding.yaml) | [makerspace-welding.md](sites/makerspace-welding.md) |
+| [makerspace-digifab.yaml](sites/makerspace-digifab.yaml) | [makerspace-digifab.md](sites/makerspace-digifab.md) |
 | [club.yaml](sites/club.yaml) | [club.md](sites/club.md) |
 | [store.yaml](sites/store.yaml) | [store.md](sites/store.md) |
 | [rv.yaml](sites/rv.yaml) | [rv.md](sites/rv.md) |

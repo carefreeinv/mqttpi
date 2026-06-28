@@ -1,0 +1,157 @@
+# Site: Makerspace — Digital fabrication zone node
+#
+# One Pico W per shop zone. Laser exhaust, printer bench, electronics lighting,
+# PN532 RFID at lab entry for member tracking (access control via HA).
+# HA automations interlock laser power with door closed + exhaust running.
+#
+#   cp examples/sites/makerspace-digifab.yaml config.yaml
+#
+# Sibling zones: makerspace-woodshop.yaml, makerspace-welding.yaml
+
+device:
+  id: makerspace-digifab
+  board: picow
+  profile: sensors
+  ha:
+    name: "Makerspace Digifab"
+    manufacturer: mqttpi
+    model: picow
+
+mqtt:
+  host: 192.168.1.50
+  port: 1883
+  tls: false
+  base_topic: site/makerspace/digifab
+  client_id: mqttpi-makerspace-digifab
+  homeassistant:
+    discovery: true
+    discovery_prefix: homeassistant
+  payload_on: "ON"
+  payload_off: "OFF"
+  retain: true
+  qos: 1
+
+buses:
+  onewire: { enabled: false, pin: 7 }
+  i2c:     { enabled: true, controller: 0, sda: 0, scl: 1 }
+  spi:     { enabled: false, controller: 0, sck: 2, mosi: 3, miso: 4, cs: 5 }
+  i2s:     { enabled: false, bclk: 16, lrck: 17, din: 18, dout: 19 }
+
+pwm:
+  enabled: true
+  pins: [8, 9, 10, 11, 12, 13, 14, 15]
+
+mqtt_aliases: {}
+
+sensors:
+  rfid:
+    enabled: true
+    reader:
+      type: pn532_i2c
+      address: 0x24
+      irq_pin: 7
+    protocol: iso14443a
+    zone: digifab
+    publish:
+      debounce_ms: 800
+      retain_last_uid: true
+    topics:
+      scan: "{base_topic}/rfid/scan"
+      last_uid: "{base_topic}/rfid/last_uid/state"
+      pair: "{base_topic}/rfid/pair"
+    access:
+      mode: track
+      grant_topic: "{base_topic}/rfid/access/granted"
+      deny_topic: "{base_topic}/rfid/access/denied"
+      allowed_uids: []
+    ha:
+      name: "Digifab Entry RFID"
+    readings:
+      last_uid:
+        alias: rfid_last_uid
+        ha:
+          name: "Last Card UID"
+          icon: mdi:card-account-details
+      scan_count:
+        alias: rfid_scan_count
+        ha:
+          name: "RFID Scan Count"
+          state_class: total_increasing
+          icon: mdi:counter
+      access_granted:
+        alias: rfid_access_granted
+        type: binary
+        ha:
+          name: "RFID Access Granted"
+          device_class: lock
+          icon: mdi:lock-open
+
+pins:
+  - pin: 6
+    alias: laser_room_door
+    direction: input
+    pull: up
+    invert: true
+    debounce_ms: 50
+    ha: { name: "Laser Room Door", device_class: door }
+
+  - pin: 20
+    alias: motion_lab
+    direction: input
+    pull: down
+    debounce_ms: 200
+    ha: { name: "Digifab Motion", device_class: motion }
+
+  - pin: 21
+    alias: laser_exhaust
+    direction: output
+    initial: false
+    ha: { name: "Laser Exhaust", icon: mdi:air-filter }
+
+  - pin: 22
+    alias: laser_power
+    direction: output
+    initial: false
+    ha: { name: "Laser Cutter Outlet", icon: mdi:laser-pointer }
+
+  - pin: 2
+    alias: printer_bench
+    direction: output
+    initial: false
+    ha: { name: "3D Printer Bench", icon: mdi:printer-3d }
+
+  - pin: 3
+    alias: vinyl_cutter
+    direction: output
+    initial: false
+    ha: { name: "Vinyl Cutter Outlet", icon: mdi:content-cut }
+
+  - pin: 4
+    alias: lab_overhead
+    direction: output
+    initial: false
+    ha: { name: "Lab Overhead Lights", icon: mdi:ceiling-light }
+
+  - pin: 5
+    alias: electronics_bench
+    direction: output
+    initial: false
+    ha: { name: "Electronics Bench", icon: mdi:chip }
+
+  - pin: 8
+    alias: lab_dim
+    direction: pwm_output
+    frequency_hz: 1000
+    initial_duty: 0
+    ha: { name: "Lab Dimmer", min: 0, max: 100, unit_of_measurement: "%" }
+
+  - pin: 26
+    alias: lab_temp
+    direction: analog_input
+    publish: { interval_ms: 60000 }
+    ha:
+      name: "Digifab Temperature"
+      device_class: temperature
+      state_class: measurement
+      unit_of_measurement: "°C"
+      scale: { min: -40.0, max: 85.0 }

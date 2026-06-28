@@ -1,0 +1,158 @@
+# Site: Makerspace — Woodshop zone node
+#
+# One Pico W per shop zone. Dust collection, machine outlets, lighting,
+# PN532 RFID at entry for member tracking (access control via HA).
+# HA automations enforce dust-on-before-saw and after-hours lockouts.
+#
+#   cp examples/sites/makerspace-woodshop.yaml config.yaml
+#
+# Sibling zones: makerspace-welding.yaml, makerspace-digifab.yaml
+
+device:
+  id: makerspace-woodshop
+  board: picow
+  profile: sensors
+  ha:
+    name: "Makerspace Woodshop"
+    manufacturer: mqttpi
+    model: picow
+
+mqtt:
+  host: 192.168.1.50
+  port: 1883
+  tls: false
+  base_topic: site/makerspace/woodshop
+  client_id: mqttpi-makerspace-woodshop
+  homeassistant:
+    discovery: true
+    discovery_prefix: homeassistant
+  payload_on: "ON"
+  payload_off: "OFF"
+  retain: true
+  qos: 1
+
+buses:
+  onewire: { enabled: false, pin: 7 }
+  i2c:     { enabled: true, controller: 0, sda: 0, scl: 1 }
+  spi:     { enabled: false, controller: 0, sck: 2, mosi: 3, miso: 4, cs: 5 }
+  i2s:     { enabled: false, bclk: 16, lrck: 17, din: 18, dout: 19 }
+
+pwm:
+  enabled: true
+  pins: [8, 9, 10, 11, 12, 13, 14, 15]
+
+mqtt_aliases:
+  overhead_bank: shop_overhead
+
+sensors:
+  rfid:
+    enabled: true
+    reader:
+      type: pn532_i2c
+      address: 0x24
+      irq_pin: 7
+    protocol: iso14443a
+    zone: woodshop
+    publish:
+      debounce_ms: 800
+      retain_last_uid: true
+    topics:
+      scan: "{base_topic}/rfid/scan"
+      last_uid: "{base_topic}/rfid/last_uid/state"
+      pair: "{base_topic}/rfid/pair"
+    access:
+      mode: track
+      grant_topic: "{base_topic}/rfid/access/granted"
+      deny_topic: "{base_topic}/rfid/access/denied"
+      allowed_uids: []
+    ha:
+      name: "Woodshop Entry RFID"
+    readings:
+      last_uid:
+        alias: rfid_last_uid
+        ha:
+          name: "Last Card UID"
+          icon: mdi:card-account-details
+      scan_count:
+        alias: rfid_scan_count
+        ha:
+          name: "RFID Scan Count"
+          state_class: total_increasing
+          icon: mdi:counter
+      access_granted:
+        alias: rfid_access_granted
+        type: binary
+        ha:
+          name: "RFID Access Granted"
+          device_class: lock
+          icon: mdi:lock-open
+
+pins:
+  - pin: 6
+    alias: shop_door
+    direction: input
+    pull: up
+    invert: true
+    debounce_ms: 50
+    ha: { name: "Woodshop Door", device_class: door }
+
+  - pin: 20
+    alias: motion_shop
+    direction: input
+    pull: down
+    debounce_ms: 200
+    ha: { name: "Woodshop Motion", device_class: motion }
+
+  - pin: 21
+    alias: dust_collector
+    direction: output
+    initial: false
+    ha: { name: "Dust Collector", icon: mdi:fan }
+
+  - pin: 22
+    alias: table_saw_power
+    direction: output
+    initial: false
+    ha: { name: "Table Saw Outlet", icon: mdi:saw-blade }
+
+  - pin: 2
+    alias: planer_power
+    direction: output
+    initial: false
+    ha: { name: "Planer Outlet", icon: mdi:router }
+
+  - pin: 3
+    alias: bandsaw_power
+    direction: output
+    initial: false
+    ha: { name: "Bandsaw Outlet", icon: mdi:saw-blade }
+
+  - pin: 4
+    alias: shop_overhead
+    direction: output
+    initial: false
+    ha: { name: "Overhead Lights", icon: mdi:ceiling-light }
+
+  - pin: 5
+    alias: bench_lights
+    direction: output
+    initial: false
+    ha: { name: "Bench Accent", icon: mdi:desk-lamp }
+
+  - pin: 8
+    alias: overhead_dim
+    direction: pwm_output
+    frequency_hz: 1000
+    initial_duty: 0
+    ha: { name: "Overhead Dimmer", min: 0, max: 100, unit_of_measurement: "%" }
+
+  - pin: 26
+    alias: shop_temp
+    direction: analog_input
+    publish: { interval_ms: 60000 }
+    ha:
+      name: "Woodshop Temperature"
+      device_class: temperature
+      state_class: measurement
+      unit_of_measurement: "°C"
+      scale: { min: -40.0, max: 85.0 }

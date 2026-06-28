@@ -24,7 +24,7 @@ Configure pins, buses, and sensors in YAML; publish to an external MQTT broker w
 - **Optional buses** — enable only what you need: 1-Wire, I2C, SPI, I2S, PWM
 - **Rich examples** — 36 configs with paired docs ([`examples/README.md`](examples/README.md))
 - **JBD BMS** — wired UART monitor 
-- **Site templates** — RV, cargo trailer, semi, skoolie, house, robot, 32-relay bank, …
+- **Site templates** — RV, cargo trailer, semi, skoolie, house, makerspace zones, robot, 32-relay bank, …
 
 ## Status (v0.2.0)
 

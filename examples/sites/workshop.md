@@ -167,6 +167,7 @@ A: This is a **fixed** Pico W shop without I2S. Cargo-trailer-workshop is a **mo
 
 | Example | Why |
 |---------|-----|
+| [`makerspace-woodshop.yaml`](makerspace-woodshop.yaml) | Communal woodshop zone node |
 | [`cargo-trailer-workshop.yaml`](cargo-trailer-workshop.yaml) | Mobile shop + I2S alerts |
 | [`cargo-trailer.yaml`](cargo-trailer.yaml) | Enclosed trailer GPIO only |
 | [`../multi-relay.yaml`](../multi-relay.yaml) | Relay output patterns |

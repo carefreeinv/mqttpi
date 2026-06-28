@@ -128,6 +128,7 @@ def stage_examples() -> None:
     protocols = [
         "jbd-bms.md",
         "level-accelerometer.md",
+        "rfid.md",
         "tpms.md",
         "can-vehicle.md",
         "can-rvc.md",

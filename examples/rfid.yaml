@@ -1,0 +1,88 @@
+# RFID — member card reader reference (HA)
+#
+# PN532 on I2C (default) for 13.56 MHz ISO14443A member fobs/cards.
+# Publishes scan events and last UID for zone tracking; access control hooks
+# for future allowlist enforcement and mag-lock triggers.
+#
+# Pair unknown card at reader:
+#   mosquitto_pub -h 192.168.1.50 -t site/makerspace/woodshop/rfid/pair -m "ON"
+#
+#   cp examples/rfid.yaml config.yaml
+
+device:
+  id: rfid-node-01
+  board: picow
+  profile: sensors
+  ha:
+    name: "RFID Reader"
+    manufacturer: mqttpi
+    model: picow
+
+mqtt:
+  host: 192.168.1.50
+  port: 1883
+  tls: false
+  base_topic: site/rfid-node-01
+  client_id: mqttpi-rfid-node-01
+  homeassistant:
+    discovery: true
+    discovery_prefix: homeassistant
+  retain: true
+  qos: 1
+
+buses:
+  onewire: { enabled: false, pin: 7 }
+  i2c:     { enabled: true, controller: 0, sda: 0, scl: 1 }
+  spi:     { enabled: false, controller: 0, sck: 2, mosi: 3, miso: 4, cs: 5 }
+  i2s:     { enabled: false, bclk: 16, lrck: 17, din: 18, dout: 19 }
+
+pwm:
+  enabled: false
+  pins: [8, 9, 10, 11, 12, 13, 14, 15]
+
+mqtt_aliases: {}
+
+sensors:
+  rfid:
+    enabled: true
+    reader:
+      type: pn532_i2c
+      address: 0x24
+      irq_pin: 7
+    protocol: iso14443a
+    zone: entry
+    publish:
+      debounce_ms: 800
+      retain_last_uid: true
+    topics:
+      scan: "{base_topic}/rfid/scan"
+      last_uid: "{base_topic}/rfid/last_uid/state"
+      pair: "{base_topic}/rfid/pair"
+    access:
+      mode: track
+      grant_topic: "{base_topic}/rfid/access/granted"
+      deny_topic: "{base_topic}/rfid/access/denied"
+      allowed_uids: []
+    ha:
+      name: "Entry RFID"
+    readings:
+      last_uid:
+        alias: rfid_last_uid
+        ha:
+          name: "Last Card UID"
+          icon: mdi:card-account-details
+      scan_count:
+        alias: rfid_scan_count
+        ha:
+          name: "RFID Scan Count"
+          state_class: total_increasing
+          icon: mdi:counter
+      access_granted:
+        alias: rfid_access_granted
+        type: binary
+        ha:
+          name: "RFID Access Granted"
+          device_class: lock
+          icon: mdi:lock-open
+
+pins: []
