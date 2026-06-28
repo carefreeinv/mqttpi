@@ -67,23 +67,51 @@ mosquitto_pub -h 192.168.1.50 -t site/store/sfx/play -m "1"
 
 ## Amplifier Wiring
 
-I2S on Pi 4 (BCM 18–21) outputs **digital PCM**. You need a DAC or I2S-integrated amp; **70 V is not available directly from I2S pins**.
+I2S on Pi 4 (BCM 18–21) outputs **digital PCM**. You need a DAC, AES transmitter, or I2S-integrated amp; **70 V is not available directly from I2S pins**.
 
-### Option A — Multi-speaker retail (recommended for ceilings)
+For **70 V ceiling retail**, prefer one of two paths — both keep the **Pi-to-rack link simple** and leave balancing/70 V transformation to the commercial amp:
+
+| Path | Chain | When to use |
+|------|-------|-------------|
+| **A — Unbalanced analog** (default) | I2S → DAC → **RCA / 3.5 mm** → 70 V amp **LINE IN** | Short rack run (&lt; ~6 m), amp has RCA/AUX/screw-terminal inputs |
+| **B — AES digital** | I2S → **AES3 transmitter** → 70 V amp **AES/EBU IN** | Longer Pi-to-amp run, noisy electrical environment, amp has digital input |
+
+**Avoid** converting to **balanced analog XLR** on the Pi side unless the amp has no RCA/AUX and no AES input — unbalanced line or AES digital is the intended mqttpi store layout.
+
+### Option A — 70 V via unbalanced line (default)
 
 ```
-Pi 4 I2S → PCM5102 DAC → RCA/3.5 mm line → 70 V commercial amp → 70 V ceiling speakers
+Pi 4 I2S → PCM5102 DAC → unbalanced RCA (or 3.5 mm TRS) → 70 V amp LINE IN → 70 V ceiling speakers
 ```
 
 | Stage | Part examples | Notes |
 |-------|---------------|-------|
-| DAC | PCM5102, HiFiBerry DAC+ | 2 Vrms line level typical |
-| Distribution | Bogen, Atlas, Pyle 70 V amp | 60–200 W common per store |
-| Speakers | 70 V ceiling taps (5/10/15 W) | Long wire runs, many zones on one amp |
+| DAC | PCM5102, HiFiBerry DAC+ | Consumer **unbalanced** line out (~2 Vrms) |
+| Cable | Shielded RCA pair or short TRS→dual-RCA | Keep run short; single ground reference at amp |
+| Distribution | Bogen, Atlas, Pyle 70 V amp | Use **LINE**, **AUX**, or screw-terminal **unbalanced** input |
+| Speakers | 70 V ceiling taps (5/10/15 W) | Amp handles constant-voltage distribution |
 
-Set `buses.i2s.amp.profile: line_out_70v` in config.
+Set `buses.i2s.amp.profile: line_out_70v_unbalanced` and `signal_path: unbalanced_analog`.
 
-### Option B — Boutique / single zone (20–200 W)
+**Wiring tips:** Common ground Pi DAC ↔ amp chassis. Do not run unbalanced analog next to AC feeders for tens of metres — use Option B instead.
+
+### Option B — 70 V via I2S → AES3 (digital to amp)
+
+```
+Pi 4 I2S → AES3 transmitter → AES/EBU (XLR digital) → 70 V amp AES IN → 70 V ceiling speakers
+```
+
+| Stage | Part examples | Notes |
+|-------|---------------|-------|
+| AES bridge | I2S→AES3 module, pro DSP with digital out, amp-integrated USB/AES option | **XLR carries digital AES3**, not analog balanced audio |
+| Amp | 70 V amp with **AES/EBU or SPDIF** input | Atlas, Ashly, some Biamp/JBL commercial units |
+| Benefit | One digital cable Pi-rack | DAC + level alignment happen **inside the 70 V amp** |
+
+Set `buses.i2s.amp.profile: aes_to_70v` and `signal_path: aes3_digital` (see commented block in `store.yaml`).
+
+**Note:** AES3 is **AES/EBU** professional digital audio (typically 44.1/48 kHz PCM embedded in the stream). This is distinct from **analog balanced XLR** mic/line inputs.
+
+### Option C — Boutique / single zone (20–200 W)
 
 ```
 Pi 4 I2S → class-D I2S amp module → 4–8 Ω speakers (pair or parallel)
@@ -99,7 +127,7 @@ Set `buses.i2s.amp.profile: class_d_direct` and update `power_stage` in YAML.
 
 **Power supply:** Class-D boards need a **separate DC supply** sized to wattage (e.g. 24 V 5 A for 100 W). Do not power high-watt amps from the Pi.
 
-### Option C — Zoned ceilings (many rooms)
+### Option D — Zoned ceilings (many rooms)
 
 Use a **70 V amp with zone relays**, or add a Pico W [`speaker-zones-8`](../speaker-zones-8.md) node for zone triggers while this Pi feeds the amp line input.
 
@@ -110,8 +138,8 @@ Use a **70 V amp with zone relays**, or add a Pico W [`speaker-zones-8`](../spea
 | Item | Role |
 |------|------|
 | Raspberry Pi 4 | Store controller + audio streamer |
-| PCM5102 or I2S class-D amp | I2S → speakers or 70 V amp line in |
-| 70 V amp + ceiling speakers | Multi-tap retail PA (option A) |
+| PCM5102 DAC or I2S→AES3 bridge | Unbalanced line or digital feed to amp rack |
+| 70 V amp + ceiling speakers | Multi-tap retail PA (options A or B) |
 | Relay module ×3 | Open sign, display accent, amp power |
 | PWM LED driver | Window display dimmer (GP12) |
 | Door contacts ×2 | Front, stockroom |
@@ -205,7 +233,7 @@ GPIO topics: `{base_topic}/gpio/{alias}/state` (+ `/set` for outputs).
 ## Design Decisions
 
 1. **Streaming first** — `buses.i2s.stream` is the primary feature; SFX is secondary with ducking.
-2. **`line_out_70v` default** — Matches typical ceiling-speaker retail; switch profile for direct class-D boutiques.
+2. **Unbalanced or AES to 70 V** — Default `line_out_70v_unbalanced` (RCA/AUX); `aes_to_70v` when the amp has AES/EBU in. No balanced-analog XLR from the Pi unless unavoidable.
 3. **`amp_power` relay** — Hard-mutes amp at close; avoids idle hiss and saves standby power.
 4. **Local playlist fallback** — Store keeps playing if WAN drops (important for strip malls).
 5. **Icecast + Snapcast** — Two common enterprise patterns without locking to one vendor.
@@ -219,7 +247,13 @@ GPIO topics: `{base_topic}/gpio/{alias}/state` (+ `/set` for outputs).
 A: Not on Pico W. On Pi 4, the planned daemon targets **HTTP MP3/Icecast, local files, and Snapcast**. Spotify/RTMP usually need `ffmpeg` or a separate streamer feeding line-in — integrate via HA or pipe into Snapcast.
 
 **Q: 70 V vs 8 Ω?**  
-A: **70 V** for many ceiling speakers and long cable runs (grocery, big-box). **8 Ω class-D** for one room or low speaker count. I2S always lands on a **low-voltage DAC or amp** first.
+A: **70 V** for many ceiling speakers and long cable runs (grocery, big-box). **8 Ω class-D** for one room or low speaker count. I2S always lands on a **DAC, AES transmitter, or class-D amp** first.
+
+**Q: Unbalanced RCA vs balanced XLR vs AES?**  
+A: **Prefer unbalanced RCA/line** into the 70 V amp’s AUX/LINE input for short rack wiring. **Prefer AES3** (digital on AES/EBU XLR) for a longer or noisier Pi-to-amp run — the amp’s internal DAC handles level and distribution. Skip **analog balanced XLR** from the Pi unless the amp lacks RCA and AES.
+
+**Q: Is AES the same as balanced analog XLR?**  
+A: No. **AES3** is a **digital** stream on an XLR connector. **Balanced analog XLR** is a different electrical format. This example’s `aes_to_70v` path is digital end-to-end to the amp’s AES input.
 
 **Q: How loud is 200 W on 70 V?**  
 A: Tap each ceiling speaker (e.g. 5 W × 20 speakers = 100 W program). Size the amp for headroom, not max wattage on every tap.

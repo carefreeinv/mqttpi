@@ -44,12 +44,22 @@ buses:
     din: 20
     dout: 21
     amp:
-      # line_out_70v: I2S DAC → RCA/3.5 mm → commercial 70 V head-end (ceiling speakers)
-      # class_d_direct: I2S amp module drives 4–8 Ω speakers in one zone (boutique)
-      profile: line_out_70v
+      # 70 V retail — prefer one of:
+      #   line_out_70v_unbalanced: I2S DAC → unbalanced RCA/3.5 mm → 70 V amp LINE IN
+      #   aes_to_70v:              I2S → AES3 transmitter → 70 V amp AES/EBU IN (digital hop)
+      # Boutique single-zone:
+      #   class_d_direct: I2S class-D module → 4–8 Ω speakers
+      profile: line_out_70v_unbalanced
+      signal_path: unbalanced_analog
+      coupling: rca_stereo
       dac: PCM5102
       power_stage: "70 V distribution amp (e.g. 60–200 W)"
       wattage_range: "20-200"
+      # aes_to_70v alternative (uncomment and switch profile/signal_path):
+      # profile: aes_to_70v
+      # signal_path: aes3_digital
+      # aes_transmitter: "I2S → AES3 bridge at amp rack"
+      # amp_input: aes_ebu
     stream:
       enabled: true
       autoplay_on_boot: true
