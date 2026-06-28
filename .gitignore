@@ -3,6 +3,9 @@ secrets.yaml
 config.yaml
 config.local.yaml
 
+# Per-deployment project notes (local only)
+projects/
+
 # Python
 __pycache__/
 *.py[cod]
