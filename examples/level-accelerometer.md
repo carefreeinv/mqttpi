@@ -43,13 +43,24 @@ Entities appear via MQTT discovery under device **Vehicle Level**.
 
 ## Bus wiring
 
-```
-Pico W          MPU6050 / ADXL345
-──────          ─────────────────
-GP0 (SDA) ───── SDA
-GP1 (SCL) ───── SCL
-3V3 (OUT) ───── VCC
-GND       ───── GND
+```mermaid
+flowchart LR
+    subgraph pico ["Pico W"]
+        sda0["GP0 SDA"]
+        scl0["GP1 SCL"]
+        v3["3V3 OUT"]
+        gnd0["GND"]
+    end
+    subgraph imu ["MPU6050 / ADXL345"]
+        sda1["SDA"]
+        scl1["SCL"]
+        vcc["VCC"]
+        gnd1["GND"]
+    end
+    sda0 --- sda1
+    scl0 --- scl1
+    v3 --- vcc
+    gnd0 --- gnd1
 ```
 
 - Keep I2C leads short; add **4.7 kΩ** pull-ups on SDA/SCL if the module has none.

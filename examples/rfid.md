@@ -44,30 +44,60 @@ This example enables **I2C** and defaults to **PN532** — the usual choice on P
 
 ### PN532 I2C (default)
 
-```
-Pico W          PN532 module
-──────          ────────────
-GP0 (SDA) ───── SDA
-GP1 (SCL) ───── SCL
-GP7 (IRQ) ◄──── IRQ   (optional — faster scans)
-3V3       ───── VCC
-GND       ───── GND
+```mermaid
+flowchart LR
+    subgraph pico ["Pico W"]
+        sda0["GP0 SDA"]
+        scl0["GP1 SCL"]
+        irq0["GP7 IRQ"]
+        v3["3V3"]
+        gnd0["GND"]
+    end
+    subgraph pn532 ["PN532 module"]
+        sda1["SDA"]
+        scl1["SCL"]
+        irq1["IRQ"]
+        vcc["VCC"]
+        gnd1["GND"]
+    end
+    sda0 --- sda1
+    scl0 --- scl1
+    irq0 -. optional .-> irq1
+    v3 --- vcc
+    gnd0 --- gnd1
 ```
 
 Set the PN532 board jumper to **I2C** mode (often labeled `I0`/`I1` or `SEL0`/`SEL1` per module silkscreen).
 
 ### MFRC522 SPI (alternative)
 
-```
-Pico W          MFRC522
-──────          ───────
-GP2 (SCK)  ───── SCK
-GP3 (MOSI) ───── MOSI
-GP4 (MISO) ───── MISO
-GP5 (CS)   ───── SDA/CS
-GP7 (RST)  ───── RST   (optional)
-3V3        ───── 3.3V
-GND        ───── GND
+```mermaid
+flowchart LR
+    subgraph pico ["Pico W"]
+        sck["GP2 SCK"]
+        mosi["GP3 MOSI"]
+        miso["GP4 MISO"]
+        cs["GP5 CS"]
+        rst["GP7 RST"]
+        v3["3V3"]
+        gnd0["GND"]
+    end
+    subgraph mfrc ["MFRC522"]
+        sck1["SCK"]
+        mosi1["MOSI"]
+        miso1["MISO"]
+        cs1["SDA/CS"]
+        rst1["RST"]
+        vcc["3.3V"]
+        gnd1["GND"]
+    end
+    sck --- sck1
+    mosi --- mosi1
+    miso --- miso1
+    cs --- cs1
+    rst -. optional .-> rst1
+    v3 --- vcc
+    gnd0 --- gnd1
 ```
 
 Enable `buses.spi` and set `reader.type: mfrc522_spi` — only when those GPIO lines are not used for relays.
@@ -100,7 +130,23 @@ Default `base_topic`: `site/rfid-node-01`
 
 **HA tracking pattern:** MQTT trigger on `rfid/scan` → log to `input_text` / Influx / spreadsheet webhook. Match UID against a member helper list for dashboards.
 
-**HA access pattern (today):** Automation on `rfid/scan` → if UID in `input_text.members` → turn on mag-lock relay (see [`club.yaml`](examples/sites/club.yaml)); else notify staff.
+**HA access pattern (today):**
+
+```mermaid
+sequenceDiagram
+    participant Card
+    participant Reader as PN532 reader
+    participant MQTT
+    participant HA as Home Assistant
+    Card->>Reader: tap
+    Reader->>MQTT: rfid/scan JSON
+    MQTT->>HA: automation trigger
+    alt UID in member list
+        HA->>MQTT: mag-lock relay ON
+    else unknown UID
+        HA->>HA: notify staff
+    end
+```
 
 ### Home Assistant entities
 

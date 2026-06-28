@@ -199,6 +199,10 @@ def main() -> None:
     styles_dst.mkdir(parents=True, exist_ok=True)
     shutil.copy(ASSETS / "extra.css", styles_dst / "extra.css")
 
+    js_dst = DOCS / "javascripts"
+    js_dst.mkdir(parents=True, exist_ok=True)
+    shutil.copy(ASSETS / "mermaid-init.js", js_dst / "mermaid-init.js")
+
     assets_dst = DOCS / "assets"
     assets_dst.mkdir(parents=True, exist_ok=True)
     shutil.copy(ASSETS / "logo.svg", assets_dst / "logo.svg")

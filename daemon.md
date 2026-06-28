@@ -36,16 +36,19 @@ The daemon stays in the foreground until you press Ctrl+C. It publishes `{base_t
 
 ## What the daemon does
 
-1. Loads and merges `config.yaml` + `secrets.yaml`
-2. Connects to your MQTT broker (one client per process)
-3. **GPIO** (if `pins[]` is non-empty):
-   - Configures outputs and inputs via RPi.GPIO on Linux Pi
-   - Publishes Home Assistant discovery for switches (outputs) and binary sensors (inputs)
-   - Subscribes to `{base_topic}/gpio/{alias}/set` for relay commands
-   - Polls inputs with per-pin debounce
-4. **BMS** (if `bms.enabled: true`):
-   - Polls JBD UART on the configured interval (same logic as `mqttpi.bms.bridge`)
-   - Publishes sensor/binary_sensor discovery and state topics
+```mermaid
+flowchart TD
+    start([Start daemon]) --> load["Load config.yaml + secrets.yaml"]
+    load --> mqtt["Connect MQTT broker<br/>(one client per process)"]
+    mqtt --> gpio{pins[] non-empty?}
+    gpio -->|yes| gpio_run["GPIO subsystem<br/>Configure outputs/inputs<br/>Publish HA discovery<br/>Subscribe gpio/set topics<br/>Poll inputs with debounce"]
+    gpio -->|no| bms
+    gpio_run --> bms{bms.enabled?}
+    bms -->|yes| bms_run["BMS subsystem<br/>Poll JBD UART<br/>Publish sensor state + discovery"]
+    bms -->|no| loop([Run until exit])
+    bms_run --> loop
+    loop --> status["Publish status online/offline"]
+```
 
 ## Standalone BMS bridge
 

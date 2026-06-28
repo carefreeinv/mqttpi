@@ -44,15 +44,16 @@ cp secrets.example.yaml secrets.yaml
 
 ## Bus wiring
 
+```mermaid
+flowchart LR
+    pico["Pico W SPI"] --> mcp["MCP2515 module"]
+    mcp --> xcvr["CAN transceiver"]
+    xcvr -->|CANH| obd_h["OBD-II CAN-H<br/>pin 6*"]
+    xcvr -->|CANL| obd_l["OBD-II CAN-L<br/>pin 14*"]
+    xcvr --- gnd["common ground"]
 ```
-MCP2515 module          CAN transceiver          Vehicle / OBD
-──────────────          ───────────────          ─────────────
-SPI → Pico              CANH ────────────────► CAN-H (pin 6 on OBD-II*)
-                        CANL ────────────────► CAN-L (pin 14)
-                        GND  ─────────────── common ground
 
-* OBD pinout varies; verify with a wiring diagram. Many ISO 15765-4 vehicles use pins 6/14.
-```
+\* OBD pinout varies; verify with a wiring diagram. Many ISO 15765-4 vehicles use pins 6/14.
 
 **Listen-only:** Config sets `mode: read`. Firmware should configure the transceiver/MCP2515 for receive and controlled OBD requests only — never inject arbitrary frames on a live powertrain bus without understanding the risk.
 

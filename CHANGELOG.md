@@ -8,6 +8,8 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- **Mermaid diagrams** — flow and wiring docs converted from ASCII; MkDocs loads Mermaid 11 via `extra_javascript` + `site_assets/mermaid-init.js` (theme-aware render on instant navigation)
+- **Deployment guides** for [`house`](deployments/house.md), [`store`](deployments/store.md), and [`makerspace`](deployments/makerspace.md) site templates
 - **Makerspace site templates** (one Pico W per shop zone):
   - [`makerspace-woodshop`](examples/sites/makerspace-woodshop.yaml) — dust collection, saw outlets, lighting
   - [`makerspace-welding`](examples/sites/makerspace-welding.yaml) — fume extraction, welder outlets, grinding area
@@ -20,6 +22,9 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
+- [`mkdocs.yml`](mkdocs.yml) — `pymdownx.superfences` custom `mermaid` fence; Mermaid.js CDN + init script
+- [`scripts/stage_docs.py`](scripts/stage_docs.py) — stage `mermaid-init.js` into docs site
+- Flow/wiring diagrams in [`README.md`](README.md), [`daemon.md`](daemon.md), site examples ([`store`](examples/sites/store.md), [`makerspace`](examples/sites/makerspace.md)), and protocol docs ([`rfid`](examples/rfid.md), [`jbd-bms`](examples/jbd-bms.md), CAN/Victron/TPMS, …) — ASCII → Mermaid
 - [`examples/README.md`](examples/README.md) — makerspace zone index and `rfid` protocol entry
 - [`README.md`](README.md), [`config.example.yaml`](config.example.yaml) — mention makerspace zone templates
 - [`scripts/stage_docs.py`](scripts/stage_docs.py) — stage `rfid.md` into docs nav; copy `logo.svg` into `docs/assets/`

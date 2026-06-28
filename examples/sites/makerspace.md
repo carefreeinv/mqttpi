@@ -34,21 +34,15 @@ Repeat on additional Pico W boards for other zones. Change `device.id`, `mqtt.ba
 
 ## Architecture
 
-```
-                    ┌─────────────────┐
-                    │  MQTT Broker    │
-                    └────────┬────────┘
-                             │
-         ┌───────────────────┼───────────────────┐
-         │                   │                   │
-  site/makerspace/    site/makerspace/    site/makerspace/
-     woodshop            welding              digifab
-         │                   │                   │
-    ┌────┴────┐         ┌────┴────┐         ┌────┴────┐
-    │ Pico W  │         │ Pico W  │         │ Pico W  │
-    │ dust +  │         │ fume +  │         │ laser + │
-    │ saws    │         │ welders │         │ printers│
-    └─────────┘         └─────────┘         └─────────┘
+```mermaid
+flowchart TB
+    broker["MQTT Broker"]
+    broker --> woodshop["site/makerspace/woodshop"]
+    broker --> welding["site/makerspace/welding"]
+    broker --> digifab["site/makerspace/digifab"]
+    woodshop --> pw1["Pico W<br/>dust + saws"]
+    welding --> pw2["Pico W<br/>fume + welders"]
+    digifab --> pw3["Pico W<br/>laser + printers"]
 ```
 
 **Why one node per zone?**

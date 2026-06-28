@@ -48,10 +48,21 @@ Comment in YAML: use a **USB-serial adapter** on Pi 4 instead of Pico — adapt 
 
 VE.Direct is **single-device UART** — one RJ45 port, one listener.
 
-```
-Pico GP4 (TX) ─────► VE.Direct RX (via adapter cable)
-Pico GP5 (RX) ◄───── VE.Direct TX
-Pico GND      ─────── Victron GND (common reference)
+```mermaid
+flowchart LR
+    subgraph pico ["Pico W"]
+        tx["GP4 TX"]
+        rx["GP5 RX"]
+        gnd0["GND"]
+    end
+    subgraph vd ["VE.Direct device"]
+        vdrx["RX"]
+        vdtx["TX"]
+        gnd1["GND"]
+    end
+    tx --> vdrx
+    vdtx --> rx
+    gnd0 --- gnd1
 ```
 
 **RJ45:** Do not crimp random Ethernet cables — use Victron-approved VE.Direct USB or documented TTL breakout (multiple pinouts exist; wrong wiring damages neither side if current-limited, but data will not flow).

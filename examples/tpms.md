@@ -46,23 +46,43 @@ This example enables **I2C** in `buses` (for optional bridge) while the **receiv
 
 ### UART receiver (default in config)
 
-```
-Pico W          TPMS UART decoder
-──────          ─────────────────
-GP8 (TX)  ───── RX   (often unused on listen-only decoders)
-GP9 (RX)  ◄──── TX   (decoder output → Pico RX)
-GND       ───── GND
-3V3/5V    ───── VCC  (follow decoder spec — level-shift if 5 V)
+```mermaid
+flowchart LR
+    subgraph pico ["Pico W"]
+        tx["GP8 TX"]
+        rx["GP9 RX"]
+        gnd0["GND"]
+        vcc0["3V3 / 5V"]
+    end
+    subgraph decoder ["TPMS UART decoder"]
+        drx["RX"]
+        dtx["TX"]
+        gnd1["GND"]
+        vcc1["VCC"]
+    end
+    tx -. often unused .-> drx
+    dtx --> rx
+    gnd0 --- gnd1
+    vcc0 --- vcc1
 ```
 
 ### I2C bridge (alternative)
 
-```
-Pico W          I2C aggregator
-──────          ───────────────
-GP0 (SDA) ───── SDA
-GP1 (SCL) ───── SCL
-GND       ───── GND
+```mermaid
+flowchart LR
+    subgraph pico ["Pico W"]
+        sda0["GP0 SDA"]
+        scl0["GP1 SCL"]
+        gnd0["GND"]
+    end
+    subgraph agg ["I2C aggregator"]
+        sda1["SDA"]
+        scl1["SCL"]
+        gnd1["GND"]
+    end
+    sda0 --- sda1
+    scl0 --- scl1
+    gnd0 --- gnd1
 ```
 
 Antenna placement: keep RF receiver away from Wi-Fi antenna and switching regulators; external 433 MHz antenna improves range on long rigs.

@@ -57,13 +57,15 @@ Alternative: [`can-can2040.md`](can-can2040.md) @ 250k with `protocol: vecan` wh
 
 ## Bus wiring
 
+```mermaid
+flowchart LR
+    mcp["MCP2515 + transceiver"]
+    mcp -->|CANH| can_h["VE.Can / NMEA 2000 CAN-H<br/>M12 backbone"]
+    mcp -->|CANL| can_l["VE.Can / NMEA 2000 CAN-L"]
+    mcp --- gnd["common ground<br/>Victron network negative"]
 ```
-MCP2515 + transceiver CANH ───► VE.Can / NMEA 2000 CAN-H (often via M12 backbone)
-MCP2515 + transceiver CANL ───► VE.Can / NMEA 2000 CAN-L
-Common ground with Victron network negative reference
 
-termination_ohm: 120  → enable only at a physical bus end
-```
+`termination_ohm: 120` — enable only at a physical bus end.
 
 **VE.Can is NOT RV-C:**
 

@@ -40,17 +40,31 @@ can2040 replaces the **CAN controller chip**, not the **physical layer transceiv
 
 ## Bus wiring
 
+```mermaid
+flowchart TB
+    subgraph pico ["Pico W"]
+        tx["GP21 TX"]
+        rx["GP20 RX"]
+        gnd0["GND"]
+        v3["3V3"]
+    end
+    subgraph xcvr ["CAN transceiver"]
+        txd["TXD"]
+        rxd["RXD"]
+        gnd1["GND"]
+        vio["VIO 3.3 V"]
+        canh["CANH"]
+        canl["CANL"]
+    end
+    tx --> txd
+    rxd --> rx
+    gnd0 --- gnd1
+    v3 --- vio
+    canh --> bus_h["Bus CAN-H"]
+    canl --> bus_l["Bus CAN-L"]
 ```
-Pico W GP21 (TX) ──► Transceiver TXD
-Pico W GP20 (RX) ◄── Transceiver RXD
-Pico GND         ─── Transceiver GND
-3V3              ─── Transceiver VIO (3.3 V logic)
 
-Transceiver CANH ──────► Bus CAN-H
-Transceiver CANL ──────► Bus CAN-L
-
-Optional 120 Ω between CANH-CANL at bus end (termination_ohm: 120)
-```
+Optional **120 Ω** between CANH–CANL at bus end (`termination_ohm: 120`).
 
 **Do not** wire GP20/GP21 directly to CAN-H/CAN-L — the transceiver provides differential drive and protection.
 

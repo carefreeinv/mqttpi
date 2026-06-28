@@ -50,10 +50,21 @@ python3 -m mqttpi.bms.bridge -v
 
 Point-to-point 3-wire UART (logic-level TTL, not RS-485):
 
-```
-BMS TX  ──►  Pi RX   (GPIO15 / pin 10, or USB-TTL RX)
-BMS RX  ◄──  Pi TX   (GPIO14 / pin  8, or USB-TTL TX)
-BMS GND ───  Pi GND
+```mermaid
+flowchart LR
+    subgraph bms ["JBD BMS"]
+        btx["BMS TX"]
+        brx["BMS RX"]
+        bgnd["BMS GND"]
+    end
+    subgraph pi ["Raspberry Pi"]
+        prx["Pi RX<br/>GPIO15 / USB-TTL RX"]
+        ptx["Pi TX<br/>GPIO14 / USB-TTL TX"]
+        pgnd["Pi GND"]
+    end
+    btx --> prx
+    brx <-- ptx
+    bgnd --- pgnd
 ```
 
 **Pi UART enable:** If using `/dev/serial0`, ensure the primary UART is enabled and not consumed by the serial console (`raspi-config` → Interface Options → Serial Port).

@@ -51,8 +51,10 @@ cp secrets.example.yaml secrets.yaml
 
 ## Typical wiring
 
-```
-Pico GPn ──► relay module INn ──► amplifier ZONE TRIGGER n (or 12 V zone relay coil)
+```mermaid
+flowchart LR
+    gpio["Pico GPn"] --> relay["relay module INn"]
+    relay --> zone["amplifier ZONE TRIGGER n<br/>or 12 V zone relay coil"]
 ```
 
 - Use **3.3 V–compatible relay boards** or NPN/MOSFET drivers per channel.

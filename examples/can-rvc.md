@@ -47,14 +47,15 @@ Pair with [`sites/rv.yaml`](sites/rv.yaml) for GPIO not covered by RV-C, or run 
 
 ## Bus wiring
 
+```mermaid
+flowchart LR
+    xcvr["CAN transceiver"]
+    xcvr -->|CANH| can_h["RV-C backbone CAN-H"]
+    xcvr -->|CANL| can_l["RV-C backbone CAN-L"]
+    xcvr --- gnd["coach ground"]
 ```
-Transceiver CANH ──────► RV-C backbone CAN-H
-Transceiver CANL ──────► RV-C backbone CAN-L
-Transceiver GND  ──────► Coach ground (common reference)
 
-Optional 120 Ω termination at THIS node only if it is a bus end:
-  termination_ohm: 120
-```
+Optional **120 Ω** termination at this node only if it is a bus end (`termination_ohm: 120`).
 
 RV-C runs on the **coach house network** — often near the fuse panel or multiplex control center. It is **not** the same tap as:
 

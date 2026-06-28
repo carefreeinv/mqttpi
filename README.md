@@ -4,12 +4,13 @@
 
 Configure pins, buses, and sensors in YAML; publish to an external MQTT broker with automatic [Home Assistant](https://www.home-assistant.io/) discovery.
 
-```
-  ┌─────────────┐   Wi-Fi/Eth   ┌─────────────┐   MQTT   ┌──────────────────┐
-  │ Pico W / Pi │──────────────▶│   Broker    │─────────▶│ Home Assistant   │
-  │  GPIO BMS   │               │  (external) │          │ auto-discovery   │
-  │  CAN / I2C  │               └─────────────┘          └──────────────────┘
-  └─────────────┘
+```mermaid
+flowchart LR
+    node["Pico W / Pi<br/>GPIO · BMS<br/>CAN · I2C"]
+    broker["MQTT Broker<br/>(external)"]
+    ha["Home Assistant<br/>auto-discovery"]
+    node -->|Wi-Fi / Ethernet| broker
+    broker -->|MQTT| ha
 ```
 
 **Repository:** [github.com/carefreeinv/mqttpi](https://github.com/carefreeinv/mqttpi)
@@ -136,7 +137,10 @@ mqttpi/
 │   └── bms/             # JBD UART subsystem
 ├── examples/            # YAML + markdown docs
 ├── projects/            # Deployment guides
-│   └── cargo-trailer/
+│   ├── cargo-trailer/
+│   ├── house/
+│   ├── store/
+│   └── makerspace/
 ├── mqttpi.service       # systemd template (manual install)
 └── mqttpi-bms.service   # BMS-only systemd template
 ```

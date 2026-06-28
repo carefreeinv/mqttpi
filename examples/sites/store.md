@@ -79,8 +79,12 @@ For **70 V ceiling retail**, prefer one of two paths — both keep the **Pi-to-r
 
 ### Option A — 70 V via unbalanced line (default)
 
-```
-Pi 4 I2S → PCM5102 DAC → unbalanced RCA (or 3.5 mm TRS) → 70 V amp LINE IN → 70 V ceiling speakers
+```mermaid
+flowchart LR
+    pi["Pi 4 I2S"] --> dac["PCM5102 DAC"]
+    dac --> line["unbalanced RCA<br/>or 3.5 mm TRS"]
+    line --> amp["70 V amp LINE IN"]
+    amp --> spk["70 V ceiling speakers"]
 ```
 
 | Stage | Part examples | Notes |
@@ -96,8 +100,12 @@ Set `buses.i2s.amp.profile: line_out_70v_unbalanced` and `signal_path: unbalance
 
 ### Option B — 70 V via I2S → AES3 (digital to amp)
 
-```
-Pi 4 I2S → AES3 transmitter → AES/EBU (XLR digital) → 70 V amp AES IN → 70 V ceiling speakers
+```mermaid
+flowchart LR
+    pi["Pi 4 I2S"] --> aes["AES3 transmitter"]
+    aes --> xlr["AES/EBU<br/>XLR digital"]
+    xlr --> amp["70 V amp AES IN"]
+    amp --> spk["70 V ceiling speakers"]
 ```
 
 | Stage | Part examples | Notes |
@@ -112,8 +120,10 @@ Set `buses.i2s.amp.profile: aes_to_70v` and `signal_path: aes3_digital` (see com
 
 ### Option C — Boutique / single zone (20–200 W)
 
-```
-Pi 4 I2S → class-D I2S amp module → 4–8 Ω speakers (pair or parallel)
+```mermaid
+flowchart LR
+    pi["Pi 4 I2S"] --> amp["class-D I2S amp module"]
+    amp --> spk["4–8 Ω speakers<br/>pair or parallel"]
 ```
 
 | Module | Power | Fit |
