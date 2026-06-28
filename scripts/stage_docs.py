@@ -29,6 +29,8 @@ def repo_to_docs(rel: Path) -> str | None:
         return "daemon.md"
     if len(rel.parts) == 3 and rel.parts[0] == "projects" and rel.name == "README.md":
         return f"projects/{rel.parent.name}.md"
+    if rel.parts[0] == "deployments":
+        return str(Path("projects", rel.name))
     parts = list(rel.parts)
     if parts[0] == "examples" and rel.name == "README.md":
         return "examples/index.md"
@@ -167,24 +169,30 @@ def main() -> None:
     copy_md(ROOT / "daemon.md", DOCS / "daemon.md")
     copy_md(ROOT / "CHANGELOG.md", DOCS / "changelog.md")
     copy_md(ROOT / "config.example.md", DOCS / "configuration.md")
-    copy_md(ROOT / "projects" / "cargo-trailer" / "README.md", DOCS / "projects" / "cargo-trailer.md")
+
+    deployment_guides = sorted((ROOT / "deployments").glob("*.md"))
+    for src in deployment_guides:
+        copy_md(src, DOCS / "projects" / src.name)
 
     stage_examples()
 
-    root_nav = "\n".join(
-        [
-            "nav:",
-            "  - index.md",
-            "  - daemon.md",
-            "  - configuration.md",
-            "  - examples",
-            "  - projects",
-            "  - changelog.md",
-            "",
-        ]
-    )
-    (DOCS / ".pages").write_text(root_nav, encoding="utf-8")
-    write_pages(DOCS / "projects" / ".pages", "Deployment guides")
+    root_nav_lines = [
+        "nav:",
+        "  - index.md",
+        "  - daemon.md",
+        "  - configuration.md",
+        "  - examples",
+    ]
+    if deployment_guides:
+        root_nav_lines.append("  - projects")
+    root_nav_lines.extend(["  - changelog.md", ""])
+    (DOCS / ".pages").write_text("\n".join(root_nav_lines), encoding="utf-8")
+
+    if deployment_guides:
+        projects_nav = "\n".join(
+            ["title: Deployment guides", "nav:", *[f"  - {src.name}" for src in deployment_guides], ""]
+        )
+        (DOCS / "projects" / ".pages").write_text(projects_nav, encoding="utf-8")
 
     styles_dst = DOCS / "stylesheets"
     styles_dst.mkdir(parents=True, exist_ok=True)
