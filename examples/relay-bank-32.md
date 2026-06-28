@@ -1,68 +1,56 @@
-# 32 relay outputs (Pico W + MCP23017)
+# Relay bank — 32 channels (MCP23017 expanders)
 
-**Config:** [`relay-bank-32.yaml`](relay-bank-32.yaml)
+32 relay outputs on a **Pico W** using **two MCP23017** I2C GPIO expanders. Each MCP23017 provides **16 GPIO** (8 on PORTA + 8 on PORTB); two chips yield 32 outputs while **GP0/GP1** carry I2C and the remaining native pins stay free.
 
-## Purpose
+For 16 relays on **native GPIO only** (no expanders), see [relay-bank-16](relay-bank-16.md).
 
-Control **up to 32 relay channels** from a Pico W when native GPIO (max ~23) is not enough. Uses **four MCP23017** I2C GPIO expanders (8 outputs each) at addresses `0x20`–`0x23`.
+## Why expanders?
 
-## Can Pico W do 32 relays alone?
+A Pico W has ~23 usable GPIO after reserved pins. Thirty-two direct relay lines are not possible without external GPIO. The **MCP23017** adds 16 outputs per chip over I2C — set address jumpers for **0x20** and **0x21** on the two boards.
 
-**No.** Native GPIO tops out at ~23 pins. **32 relays requires I2C expanders** (or a Pi 4 + more expanders). This example documents the supported approach.
+| Chip | I2C address | Relays | Expander pins |
+|------|-------------|--------|---------------|
+| MCP23017 #1 | `0x20` | `relay_01`–`relay_16` | 0–15 |
+| MCP23017 #2 | `0x21` | `relay_17`–`relay_32` | 0–15 |
 
-## Quick start
+**Not** the MCP23008 — that part has only **8** GPIO. One MCP23017 replaces two MCP23008 boards for the same pin count.
 
-```bash
-cp examples/relay-bank-32.yaml config.yaml
-cp secrets.example.yaml secrets.yaml
-```
+## Wiring
 
-Wire MCP23017 modules to **I2C0: GP0 (SDA), GP1 (SCL)**. Set each module's address strap to 0x20–0x23.
+| Signal | Pico W pin |
+|--------|------------|
+| I2C SDA | GP0 |
+| I2C SCL | GP1 |
+| 3.3 V / GND | Common with expander modules (logic only) |
 
-## Hardware
+- Set **A0/A1/A2** address jumpers: first module **0x20**, second **0x21**.
+- Relay coil power is **separate** from Pico logic (typically 5 V or 12 V per module).
+- Use flyback diodes or relay boards with built-in protection.
 
-| Part | Qty | Notes |
-|------|-----|-------|
-| Pico W | 1 | MQTT over Wi-Fi |
-| MCP23017 breakout | 4 | 3.3 V, addresses 0x20–0x23 |
-| Relay modules | 32 | Driven via transistor/MOSFET per channel |
-| Pull-ups | — | Often on breakout boards (4.7 kΩ on SDA/SCL) |
+## MQTT / Home Assistant
 
-## MQTT / HA
+- Topics: `mqttpi/relay-bank-32/gpio/relay_XX/state` and `.../set`
+- Discovery: enabled — 32 `switch` entities under device **Relay Bank 32**
+- Payloads: `ON` / `OFF` (retained state)
 
-Each `relay_01` … `relay_32` becomes a HA **switch** under device **32-Channel Relay Bank**.
+## Scaling
 
-Topics: `mqttpi/relay-bank-32/gpio/relay_NN/set`
+| Relays needed | Hardware |
+|---------------|----------|
+| 16 | 1× MCP23017 **or** native GP0–GP15 ([relay-bank-16](relay-bank-16.md)) |
+| 32 | 2× MCP23017 (this example) |
+| 48 | 3× MCP23017 @ 0x20, 0x21, 0x22 |
+| 64 | 4× MCP23017 |
 
-## Design decisions
-
-| Decision | Rationale |
-|----------|-----------|
-| I2C not SPI | Only 2 pins; leaves native GPIO and PWM bank free |
-| 4× MCP23017 | Common, cheap, well-documented; 8 bits per chip |
-| `profile: sensors` | Reserves I2C; disables unrelated buses |
-| All outputs `initial: false` | Safe boot — relays off |
+MCP23017 addresses are configurable via A0–A2 (eight devices per I2C bus: `0x20`–`0x27`).
 
 ## FAQ
 
-**Q: Can I use fewer than 32 relays?**  
-A: Yes — remove unused `pins[]` entries and omit unpopulated MCP23017 chips.
+**Can I mix native GPIO and expanders?**  
+Yes — add `pins[]` with `bcm:` (native) and `expander:` entries in one config.
 
-**Q: What if two chips share an address?**  
-A: I2C collision — set address jumpers uniquely (0x20–0x27 available on most boards).
+**Pi 4 instead of Pico W?**  
+Change `board: pi4`, set `i2c.sda` / `i2c.scl` to your header pins (often GPIO2/GPIO3 on bus 1), and keep the same MCP23017 layout.
 
-**Q: Will expander toggling be fast enough?**  
-A: I2C at 100–400 kHz is fine for relays (ms-scale); not for high-frequency PWM.
-
-**Q: Is this implemented in code yet?**  
-A: **Config contract only** — MCP23017 driver pending in main mqttpi daemon.
-
-## Related
-
-- [`multi-relay.md`](multi-relay.md) — 4 native GPIO relays
-- [`relay-bank-32.yaml`](relay-bank-32.yaml)
-- [`sites/cargo-trailer.md`](sites/cargo-trailer.md) — first field project (fewer channels)
-
-## Implementation status
-
-**Config only.** Requires future `expanders.mcp23017` support in runtime.
+**Daemon status?**  
+GPIO expander support is part of the mqttpi config contract; verify runtime support before production deploy.

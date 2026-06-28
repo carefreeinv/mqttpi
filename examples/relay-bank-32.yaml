@@ -1,222 +1,266 @@
-# 32 relay outputs — Pico W + 4× MCP23017 I2C expanders
-#
-# Pico W has ~23 native GPIO — NOT enough for 32 relays. This example uses
-# four MCP23017 chips (8 outputs each) on I2C0 (GP0/GP1).
-#
-# Hardware: 3.3 V MCP23017 modules or level-shifted relay boards per channel.
-# Each relay coil must be driven via transistor/MOSFET — never from expander pin.
-#
-#   cp examples/relay-bank-32.yaml config.yaml
+# 32 relay outputs via 2× MCP23017 I2C GPIO expanders (16 GPIO per chip).
+# Pico W: I2C0 on GP0 (SDA) + GP1 (SCL). Native GPIO stays free for inputs/sensors.
+# Each MCP23017 adds 16 outputs (PORTA 0–7 + PORTB 8–15); two chips = 32 relays.
+# See relay-bank-32.md for wiring, power, and HA discovery.
+
+board: pico_w
+profile: maximum_gpio
 
 device:
   id: relay-bank-32
-  board: picow
-  profile: sensors
-  ha:
-    name: "32-Channel Relay Bank"
-    manufacturer: mqttpi
-    model: picow-mcp23017
+  name: Relay Bank 32
+  manufacturer: mqttpi
+  model: MCP23017×2
 
 mqtt:
-  host: 192.168.1.50
-  port: 1883
-  tls: false
+  broker:
+    host: mqtt.local
+    port: 1883
   base_topic: mqttpi/relay-bank-32
-  client_id: mqttpi-relay-bank-32
   homeassistant:
     discovery: true
-    discovery_prefix: homeassistant
-  payload_on: "ON"
-  payload_off: "OFF"
-  retain: true
-  qos: 1
 
-buses:
-  onewire: { enabled: false, pin: 7 }
-  i2c:     { enabled: true, controller: 0, sda: 0, scl: 1 }
-  spi:     { enabled: false, controller: 0, sck: 2, mosi: 3, miso: 4, cs: 5 }
-  i2s:     { enabled: false, bclk: 16, lrck: 17, din: 18, dout: 19 }
+i2c:
+  enabled: true
+  bus: 0
+  sda: 0
+  scl: 1
+  frequency_hz: 400000
 
-pwm:
-  enabled: false
-  pins: [8, 9, 10, 11, 12, 13, 14, 15]
-
-# Four MCP23017 at 0x20–0x23 → 32 open-drain/output channels
 expanders:
   mcp23017:
     enabled: true
-    bus: i2c
     chips:
       - address: 0x20
-        alias: bank_a
+        reset_pin: null
       - address: 0x21
-        alias: bank_b
-      - address: 0x22
-        alias: bank_c
-      - address: 0x23
-        alias: bank_d
+        reset_pin: null
 
-mqtt_aliases: {}
-
-# Channels: expander address + port A/B pin 0-7 (implementation maps to GPA/GPB)
 pins:
-  - expander: { chip: 0x20, pin: 0 }
-    alias: relay_01
+  # MCP23017 @ 0x20 — relays 1–16 (pins 0–15)
+  - alias: relay_01
     direction: output
-    initial: false
-    ha: { name: "Relay 01" }
-  - expander: { chip: 0x20, pin: 1 }
-    alias: relay_02
+    default: false
+    homeassistant:
+      name: Relay 01
+      device_class: switch
+    expander: { chip: 0x20, pin: 0 }
+  - alias: relay_02
     direction: output
-    initial: false
-    ha: { name: "Relay 02" }
-  - expander: { chip: 0x20, pin: 2 }
-    alias: relay_03
+    default: false
+    homeassistant:
+      name: Relay 02
+      device_class: switch
+    expander: { chip: 0x20, pin: 1 }
+  - alias: relay_03
     direction: output
-    initial: false
-    ha: { name: "Relay 03" }
-  - expander: { chip: 0x20, pin: 3 }
-    alias: relay_04
+    default: false
+    homeassistant:
+      name: Relay 03
+      device_class: switch
+    expander: { chip: 0x20, pin: 2 }
+  - alias: relay_04
     direction: output
-    initial: false
-    ha: { name: "Relay 04" }
-  - expander: { chip: 0x20, pin: 4 }
-    alias: relay_05
+    default: false
+    homeassistant:
+      name: Relay 04
+      device_class: switch
+    expander: { chip: 0x20, pin: 3 }
+  - alias: relay_05
     direction: output
-    initial: false
-    ha: { name: "Relay 05" }
-  - expander: { chip: 0x20, pin: 5 }
-    alias: relay_06
+    default: false
+    homeassistant:
+      name: Relay 05
+      device_class: switch
+    expander: { chip: 0x20, pin: 4 }
+  - alias: relay_06
     direction: output
-    initial: false
-    ha: { name: "Relay 06" }
-  - expander: { chip: 0x20, pin: 6 }
-    alias: relay_07
+    default: false
+    homeassistant:
+      name: Relay 06
+      device_class: switch
+    expander: { chip: 0x20, pin: 5 }
+  - alias: relay_07
     direction: output
-    initial: false
-    ha: { name: "Relay 07" }
-  - expander: { chip: 0x20, pin: 7 }
-    alias: relay_08
+    default: false
+    homeassistant:
+      name: Relay 07
+      device_class: switch
+    expander: { chip: 0x20, pin: 6 }
+  - alias: relay_08
     direction: output
-    initial: false
-    ha: { name: "Relay 08" }
-  - expander: { chip: 0x21, pin: 0 }
-    alias: relay_09
+    default: false
+    homeassistant:
+      name: Relay 08
+      device_class: switch
+    expander: { chip: 0x20, pin: 7 }
+  - alias: relay_09
     direction: output
-    initial: false
-    ha: { name: "Relay 09" }
-  - expander: { chip: 0x21, pin: 1 }
-    alias: relay_10
+    default: false
+    homeassistant:
+      name: Relay 09
+      device_class: switch
+    expander: { chip: 0x20, pin: 8 }
+  - alias: relay_10
     direction: output
-    initial: false
-    ha: { name: "Relay 10" }
-  - expander: { chip: 0x21, pin: 2 }
-    alias: relay_11
+    default: false
+    homeassistant:
+      name: Relay 10
+      device_class: switch
+    expander: { chip: 0x20, pin: 9 }
+  - alias: relay_11
     direction: output
-    initial: false
-    ha: { name: "Relay 11" }
-  - expander: { chip: 0x21, pin: 3 }
-    alias: relay_12
+    default: false
+    homeassistant:
+      name: Relay 11
+      device_class: switch
+    expander: { chip: 0x20, pin: 10 }
+  - alias: relay_12
     direction: output
-    initial: false
-    ha: { name: "Relay 12" }
-  - expander: { chip: 0x21, pin: 4 }
-    alias: relay_13
+    default: false
+    homeassistant:
+      name: Relay 12
+      device_class: switch
+    expander: { chip: 0x20, pin: 11 }
+  - alias: relay_13
     direction: output
-    initial: false
-    ha: { name: "Relay 13" }
-  - expander: { chip: 0x21, pin: 5 }
-    alias: relay_14
+    default: false
+    homeassistant:
+      name: Relay 13
+      device_class: switch
+    expander: { chip: 0x20, pin: 12 }
+  - alias: relay_14
     direction: output
-    initial: false
-    ha: { name: "Relay 14" }
-  - expander: { chip: 0x21, pin: 6 }
-    alias: relay_15
+    default: false
+    homeassistant:
+      name: Relay 14
+      device_class: switch
+    expander: { chip: 0x20, pin: 13 }
+  - alias: relay_15
     direction: output
-    initial: false
-    ha: { name: "Relay 15" }
-  - expander: { chip: 0x21, pin: 7 }
-    alias: relay_16
+    default: false
+    homeassistant:
+      name: Relay 15
+      device_class: switch
+    expander: { chip: 0x20, pin: 14 }
+  - alias: relay_16
     direction: output
-    initial: false
-    ha: { name: "Relay 16" }
-  - expander: { chip: 0x22, pin: 0 }
-    alias: relay_17
+    default: false
+    homeassistant:
+      name: Relay 16
+      device_class: switch
+    expander: { chip: 0x20, pin: 15 }
+
+  # MCP23017 @ 0x21 — relays 17–32 (pins 0–15)
+  - alias: relay_17
     direction: output
-    initial: false
-    ha: { name: "Relay 17" }
-  - expander: { chip: 0x22, pin: 1 }
-    alias: relay_18
+    default: false
+    homeassistant:
+      name: Relay 17
+      device_class: switch
+    expander: { chip: 0x21, pin: 0 }
+  - alias: relay_18
     direction: output
-    initial: false
-    ha: { name: "Relay 18" }
-  - expander: { chip: 0x22, pin: 2 }
-    alias: relay_19
+    default: false
+    homeassistant:
+      name: Relay 18
+      device_class: switch
+    expander: { chip: 0x21, pin: 1 }
+  - alias: relay_19
     direction: output
-    initial: false
-    ha: { name: "Relay 19" }
-  - expander: { chip: 0x22, pin: 3 }
-    alias: relay_20
+    default: false
+    homeassistant:
+      name: Relay 19
+      device_class: switch
+    expander: { chip: 0x21, pin: 2 }
+  - alias: relay_20
     direction: output
-    initial: false
-    ha: { name: "Relay 20" }
-  - expander: { chip: 0x22, pin: 4 }
-    alias: relay_21
+    default: false
+    homeassistant:
+      name: Relay 20
+      device_class: switch
+    expander: { chip: 0x21, pin: 3 }
+  - alias: relay_21
     direction: output
-    initial: false
-    ha: { name: "Relay 21" }
-  - expander: { chip: 0x22, pin: 5 }
-    alias: relay_22
+    default: false
+    homeassistant:
+      name: Relay 21
+      device_class: switch
+    expander: { chip: 0x21, pin: 4 }
+  - alias: relay_22
     direction: output
-    initial: false
-    ha: { name: "Relay 22" }
-  - expander: { chip: 0x22, pin: 6 }
-    alias: relay_23
+    default: false
+    homeassistant:
+      name: Relay 22
+      device_class: switch
+    expander: { chip: 0x21, pin: 5 }
+  - alias: relay_23
     direction: output
-    initial: false
-    ha: { name: "Relay 23" }
-  - expander: { chip: 0x22, pin: 7 }
-    alias: relay_24
+    default: false
+    homeassistant:
+      name: Relay 23
+      device_class: switch
+    expander: { chip: 0x21, pin: 6 }
+  - alias: relay_24
     direction: output
-    initial: false
-    ha: { name: "Relay 24" }
-  - expander: { chip: 0x23, pin: 0 }
-    alias: relay_25
+    default: false
+    homeassistant:
+      name: Relay 24
+      device_class: switch
+    expander: { chip: 0x21, pin: 7 }
+  - alias: relay_25
     direction: output
-    initial: false
-    ha: { name: "Relay 25" }
-  - expander: { chip: 0x23, pin: 1 }
-    alias: relay_26
+    default: false
+    homeassistant:
+      name: Relay 25
+      device_class: switch
+    expander: { chip: 0x21, pin: 8 }
+  - alias: relay_26
     direction: output
-    initial: false
-    ha: { name: "Relay 26" }
-  - expander: { chip: 0x23, pin: 2 }
-    alias: relay_27
+    default: false
+    homeassistant:
+      name: Relay 26
+      device_class: switch
+    expander: { chip: 0x21, pin: 9 }
+  - alias: relay_27
     direction: output
-    initial: false
-    ha: { name: "Relay 27" }
-  - expander: { chip: 0x23, pin: 3 }
-    alias: relay_28
+    default: false
+    homeassistant:
+      name: Relay 27
+      device_class: switch
+    expander: { chip: 0x21, pin: 10 }
+  - alias: relay_28
     direction: output
-    initial: false
-    ha: { name: "Relay 28" }
-  - expander: { chip: 0x23, pin: 4 }
-    alias: relay_29
+    default: false
+    homeassistant:
+      name: Relay 28
+      device_class: switch
+    expander: { chip: 0x21, pin: 11 }
+  - alias: relay_29
     direction: output
-    initial: false
-    ha: { name: "Relay 29" }
-  - expander: { chip: 0x23, pin: 5 }
-    alias: relay_30
+    default: false
+    homeassistant:
+      name: Relay 29
+      device_class: switch
+    expander: { chip: 0x21, pin: 12 }
+  - alias: relay_30
     direction: output
-    initial: false
-    ha: { name: "Relay 30" }
-  - expander: { chip: 0x23, pin: 6 }
-    alias: relay_31
+    default: false
+    homeassistant:
+      name: Relay 30
+      device_class: switch
+    expander: { chip: 0x21, pin: 13 }
+  - alias: relay_31
     direction: output
-    initial: false
-    ha: { name: "Relay 31" }
-  - expander: { chip: 0x23, pin: 7 }
-    alias: relay_32
+    default: false
+    homeassistant:
+      name: Relay 31
+      device_class: switch
+    expander: { chip: 0x21, pin: 14 }
+  - alias: relay_32
     direction: output
-    initial: false
-    ha: { name: "Relay 32" }
+    default: false
+    homeassistant:
+      name: Relay 32
+      device_class: switch
+    expander: { chip: 0x21, pin: 15 }

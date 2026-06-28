@@ -13,6 +13,16 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - MCP23017 expander driver
 - Cargo trailer field deployment on dedicated Pico W
 
+## [0.1.1] - 2026-06-28
+
+### Added
+
+- `relay-bank-16` example — 16 relays on native Pico W GPIO (GP0–GP15), no expanders
+
+### Changed
+
+- `relay-bank-32` example — corrected to **2× MCP23017** (16 GPIO per chip @ `0x20`, `0x21`); was wrongly documented as 4× chips with 8 pins each
+
 ## [0.1.0] - 2026-06-28
 
 ### Added
@@ -37,5 +47,6 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Most subsystems are **configuration contracts**; only the BMS UART bridge is runnable in v0.1.0.
 - Cargo trailer first deployment is documented but **not registered** with the central broker yet.
 
-[Unreleased]: https://github.com/carefreeinv/mqttpi/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/carefreeinv/mqttpi/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/carefreeinv/mqttpi/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/carefreeinv/mqttpi/releases/tag/v0.1.0

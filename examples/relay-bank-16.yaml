@@ -1,0 +1,125 @@
+# 16 relay outputs — native Pico W GPIO only (no expanders)
+#
+# Uses GP0–GP15 (16 pins). Requires maximum_gpio profile: all buses and PWM off.
+# Seven pins remain free: GP16–22, GP26–28.
+#
+# Relay modules must use transistor/MOSFET drivers — not direct GPIO load.
+#
+#   cp examples/relay-bank-16.yaml config.yaml
+
+device:
+  id: relay-bank-16
+  board: picow
+  profile: maximum_gpio
+  ha:
+    name: "16-Channel Relay Bank"
+    manufacturer: mqttpi
+    model: picow
+
+mqtt:
+  host: 192.168.1.50
+  port: 1883
+  tls: false
+  base_topic: mqttpi/relay-bank-16
+  client_id: mqttpi-relay-bank-16
+  homeassistant:
+    discovery: true
+    discovery_prefix: homeassistant
+  payload_on: "ON"
+  payload_off: "OFF"
+  retain: true
+  qos: 1
+
+buses:
+  onewire: { enabled: false, pin: 7 }
+  i2c:     { enabled: false, controller: 0, sda: 0, scl: 1 }
+  spi:     { enabled: false, controller: 0, sck: 2, mosi: 3, miso: 4, cs: 5 }
+  i2s:     { enabled: false, bclk: 16, lrck: 17, din: 18, dout: 19 }
+
+pwm:
+  enabled: false
+  pins: [8, 9, 10, 11, 12, 13, 14, 15]
+
+mqtt_aliases: {}
+
+pins:
+  - pin: 0
+    alias: relay_01
+    direction: output
+    initial: false
+    ha: { name: "Relay 01" }
+  - pin: 1
+    alias: relay_02
+    direction: output
+    initial: false
+    ha: { name: "Relay 02" }
+  - pin: 2
+    alias: relay_03
+    direction: output
+    initial: false
+    ha: { name: "Relay 03" }
+  - pin: 3
+    alias: relay_04
+    direction: output
+    initial: false
+    ha: { name: "Relay 04" }
+  - pin: 4
+    alias: relay_05
+    direction: output
+    initial: false
+    ha: { name: "Relay 05" }
+  - pin: 5
+    alias: relay_06
+    direction: output
+    initial: false
+    ha: { name: "Relay 06" }
+  - pin: 6
+    alias: relay_07
+    direction: output
+    initial: false
+    ha: { name: "Relay 07" }
+  - pin: 7
+    alias: relay_08
+    direction: output
+    initial: false
+    ha: { name: "Relay 08" }
+  - pin: 8
+    alias: relay_09
+    direction: output
+    initial: false
+    ha: { name: "Relay 09" }
+  - pin: 9
+    alias: relay_10
+    direction: output
+    initial: false
+    ha: { name: "Relay 10" }
+  - pin: 10
+    alias: relay_11
+    direction: output
+    initial: false
+    ha: { name: "Relay 11" }
+  - pin: 11
+    alias: relay_12
+    direction: output
+    initial: false
+    ha: { name: "Relay 12" }
+  - pin: 12
+    alias: relay_13
+    direction: output
+    initial: false
+    ha: { name: "Relay 13" }
+  - pin: 13
+    alias: relay_14
+    direction: output
+    initial: false
+    ha: { name: "Relay 14" }
+  - pin: 14
+    alias: relay_15
+    direction: output
+    initial: false
+    ha: { name: "Relay 15" }
+  - pin: 15
+    alias: relay_16
+    direction: output
+    initial: false
+    ha: { name: "Relay 16" }

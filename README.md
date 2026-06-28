@@ -95,7 +95,7 @@ Enable the **MQTT** integration with **discovery** enabled. Entities appear afte
 | + PWM bank only | 15 pins + 8 PWM |
 | + I2C | −2 pins (GP0/1) |
 
-**32 relays** on Pico W requires **I2C MCP23017 expanders** — see [`examples/relay-bank-32.yaml`](examples/relay-bank-32.yaml).
+**32 relays** on Pico W requires **2× MCP23017** I2C expanders (16 GPIO per chip) — see [`examples/relay-bank-32.yaml`](examples/relay-bank-32.yaml).
 
 ## Examples
 
@@ -104,7 +104,7 @@ Enable the **MQTT** integration with **discovery** enabled. Entities appear afte
 | All examples + docs | [`examples/README.md`](examples/README.md) |
 | Site / vehicle templates | [`examples/sites/`](examples/sites/) |
 | First deployment | [`projects/cargo-trailer/`](projects/cargo-trailer/) |
-| 32 relays (I2C) | [`examples/relay-bank-32.md`](examples/relay-bank-32.md) |
+| 32 relays (2× MCP23017) | [`examples/relay-bank-32.md`](examples/relay-bank-32.md) |
 | Robot rover | [`examples/robot.md`](examples/robot.md) |
 | JBD BMS | [`examples/jbd-bms.md`](examples/jbd-bms.md) |
 

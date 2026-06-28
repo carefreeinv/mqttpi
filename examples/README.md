@@ -19,6 +19,7 @@ Runtime merges `secrets.yaml` onto `config.yaml`. Home Assistant MQTT **discover
 | `maximum-gpio.yaml` | [maximum-gpio.md](maximum-gpio.md) | Empty Pico W, all peripherals off |
 | `digital-in-out.yaml` | [digital-in-out.md](digital-in-out.md) | 1 relay + 1 button |
 | `multi-relay.yaml` | [multi-relay.md](multi-relay.md) | 4 relay outputs |
+| `relay-bank-16.yaml` | [relay-bank-16.md](relay-bank-16.md) | 16 relays, native GPIO only |
 | `pwm-bank.yaml` | [pwm-bank.md](pwm-bank.md) | 4 PWM channels (GP8–11) |
 | `servo-controller.yaml` | [servo-controller.md](servo-controller.md) | 4× 50 Hz servos |
 | `analog-inputs.yaml` | [analog-inputs.md](analog-inputs.md) | ADC on GP26–28 |
@@ -28,7 +29,7 @@ Runtime merges `secrets.yaml` onto `config.yaml`. Home Assistant MQTT **discover
 | `full-peripherals.yaml` | [full-peripherals.md](full-peripherals.md) | All buses + PWM on |
 | `pi4-maximum-gpio.yaml` | [pi4-maximum-gpio.md](pi4-maximum-gpio.md) | Pi 4, 26 GPIO free |
 | `pi4-pwm-relay.yaml` | [pi4-pwm-relay.md](pi4-pwm-relay.md) | Pi 4 HW PWM + relay |
-| `relay-bank-32.yaml` | [relay-bank-32.md](relay-bank-32.md) | 32 relays via MCP23017 I2C |
+| `relay-bank-32.yaml` | [relay-bank-32.md](relay-bank-32.md) | 32 relays via 2× MCP23017 I2C (16 GPIO/chip) |
 | `robot.yaml` | [robot.md](robot.md) | Differential-drive rover |
 
 ## Protocol & sensor examples
