@@ -7,7 +7,7 @@ repo_url: https://github.com/carefreeinv/mqttpi
 repo_name: carefreeinv/mqttpi
 theme:
   name: material
-  logo: material/chip
+  logo: assets/logo.svg
   icon:
     repo: fontawesome/brands/github
   palette:

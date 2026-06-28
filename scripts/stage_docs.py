@@ -199,6 +199,10 @@ def main() -> None:
     styles_dst.mkdir(parents=True, exist_ok=True)
     shutil.copy(ASSETS / "extra.css", styles_dst / "extra.css")
 
+    assets_dst = DOCS / "assets"
+    assets_dst.mkdir(parents=True, exist_ok=True)
+    shutil.copy(ASSETS / "logo.svg", assets_dst / "logo.svg")
+
 
 if __name__ == "__main__":
     main()

@@ -15,13 +15,15 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   - [`makerspace.md`](examples/sites/makerspace.md) — multi-node architecture overview
 - **`rfid` example** — PN532 I2C member-card reader config contract (scan events, last UID, access hooks)
 - PN532 RFID blocks on all three makerspace zone configs (`sensors.rfid`, `access.mode: track`)
-- MkDocs **copyright footer** — `(c) Copyright Carefree Investments {year}` linking to [carefreeinv.com](https://carefreeinv.com) via `hooks/copyright.py`
+- MkDocs **copyright footer** — `© Copyright Carefree Investments {year}` linking to [carefreeinv.com](https://carefreeinv.com) via `hooks/copyright.py`
+- MkDocs **site logo** — custom `site_assets/logo.svg` (π mark with MQTT signal arcs and GPIO pin pads)
 
 ### Changed
 
 - [`examples/README.md`](examples/README.md) — makerspace zone index and `rfid` protocol entry
 - [`README.md`](README.md), [`config.example.yaml`](config.example.yaml) — mention makerspace zone templates
-- [`scripts/stage_docs.py`](scripts/stage_docs.py) — stage `rfid.md` into docs nav
+- [`scripts/stage_docs.py`](scripts/stage_docs.py) — stage `rfid.md` into docs nav; copy `logo.svg` into `docs/assets/`
+- [`mkdocs.yml`](mkdocs.yml) — use custom logo instead of Material `chip` icon
 - [`workshop.md`](examples/sites/workshop.md) — cross-link to makerspace woodshop variant
 
 ### Planned
