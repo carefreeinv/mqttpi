@@ -105,6 +105,7 @@ Enable the **MQTT** integration with **discovery** enabled. Entities appear afte
 | Site / vehicle templates | [`examples/sites/`](examples/sites/) |
 | First deployment | [`projects/cargo-trailer/`](projects/cargo-trailer/) |
 | 32 relays (2× MCP23017) | [`examples/relay-bank-32.md`](examples/relay-bank-32.md) |
+| 8-zone speakers | [`examples/speaker-zones-8.md`](examples/speaker-zones-8.md) |
 | Robot rover | [`examples/robot.md`](examples/robot.md) |
 | JBD BMS | [`examples/jbd-bms.md`](examples/jbd-bms.md) |
 

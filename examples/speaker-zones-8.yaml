@@ -1,0 +1,86 @@
+# 8-zone speaker control — native Pico W GPIO (no expanders)
+#
+# Each output drives a relay or opto-isolator that enables one amplifier zone
+# (e.g. Russound, Monoprice, Niles, HTD multi-zone trigger inputs).
+# Uses GP0–GP7 (8 pins). GP8–GP15 remain available for PWM or extra I/O.
+#
+# Based on relay-bank-16 layout; see speaker-zones-8.md for wiring and HA.
+#
+#   cp examples/speaker-zones-8.yaml config.yaml
+
+device:
+  id: speaker-zones-8
+  board: picow
+  profile: maximum_gpio
+  ha:
+    name: "8-Zone Speaker Controller"
+    manufacturer: mqttpi
+    model: picow
+
+mqtt:
+  host: 192.168.1.50
+  port: 1883
+  tls: false
+  base_topic: mqttpi/speaker-zones-8
+  client_id: mqttpi-speaker-zones-8
+  homeassistant:
+    discovery: true
+    discovery_prefix: homeassistant
+  payload_on: "ON"
+  payload_off: "OFF"
+  retain: true
+  qos: 1
+
+buses:
+  onewire: { enabled: false, pin: 7 }
+  i2c:     { enabled: false, controller: 0, sda: 0, scl: 1 }
+  spi:     { enabled: false, controller: 0, sck: 2, mosi: 3, miso: 4, cs: 5 }
+  i2s:     { enabled: false, bclk: 16, lrck: 17, din: 18, dout: 19 }
+
+pwm:
+  enabled: false
+  pins: [8, 9, 10, 11, 12, 13, 14, 15]
+
+mqtt_aliases: {}
+
+pins:
+  - pin: 0
+    alias: zone_01
+    direction: output
+    initial: false
+    ha: { name: "Speaker Zone 1" }
+  - pin: 1
+    alias: zone_02
+    direction: output
+    initial: false
+    ha: { name: "Speaker Zone 2" }
+  - pin: 2
+    alias: zone_03
+    direction: output
+    initial: false
+    ha: { name: "Speaker Zone 3" }
+  - pin: 3
+    alias: zone_04
+    direction: output
+    initial: false
+    ha: { name: "Speaker Zone 4" }
+  - pin: 4
+    alias: zone_05
+    direction: output
+    initial: false
+    ha: { name: "Speaker Zone 5" }
+  - pin: 5
+    alias: zone_06
+    direction: output
+    initial: false
+    ha: { name: "Speaker Zone 6" }
+  - pin: 6
+    alias: zone_07
+    direction: output
+    initial: false
+    ha: { name: "Speaker Zone 7" }
+  - pin: 7
+    alias: zone_08
+    direction: output
+    initial: false
+    ha: { name: "Speaker Zone 8" }

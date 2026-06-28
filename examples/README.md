@@ -20,6 +20,7 @@ Runtime merges `secrets.yaml` onto `config.yaml`. Home Assistant MQTT **discover
 | `digital-in-out.yaml` | [digital-in-out.md](digital-in-out.md) | 1 relay + 1 button |
 | `multi-relay.yaml` | [multi-relay.md](multi-relay.md) | 4 relay outputs |
 | `relay-bank-16.yaml` | [relay-bank-16.md](relay-bank-16.md) | 16 relays, native GPIO only |
+| `speaker-zones-8.yaml` | [speaker-zones-8.md](speaker-zones-8.md) | 8-zone speaker amp triggers (GP0–7) |
 | `pwm-bank.yaml` | [pwm-bank.md](pwm-bank.md) | 4 PWM channels (GP8–11) |
 | `servo-controller.yaml` | [servo-controller.md](servo-controller.md) | 4× 50 Hz servos |
 | `analog-inputs.yaml` | [analog-inputs.md](analog-inputs.md) | ADC on GP26–28 |

@@ -81,6 +81,7 @@ A: Config contract — GPIO daemon not yet merged; BMS bridge is separate today.
 
 ## Related
 
+- [`speaker-zones-8.md`](speaker-zones-8.md) — 8-zone distributed audio (subset of this layout)
 - [`multi-relay.md`](multi-relay.md) — 4 relays (minimal)
 - [`relay-bank-32.md`](relay-bank-32.md) — 32 relays with I2C expanders
 - [`maximum-gpio.md`](maximum-gpio.md) — full 23-pin pool explained
