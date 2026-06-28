@@ -1,0 +1,31 @@
+:root {
+  --md-primary-fg-color: #0d7377;
+  --md-primary-fg-color--light: #14a3a8;
+  --md-primary-fg-color--dark: #095456;
+  --md-accent-fg-color: #e8a838;
+}
+
+.md-typeset h1 {
+  font-weight: 700;
+}
+
+.md-typeset pre > code {
+  font-size: 0.8em;
+}
+
+.hero-tagline {
+  font-size: 1.15rem;
+  color: var(--md-default-fg-color--light);
+  margin: 0.5rem 0 1.5rem;
+}
+
+.architecture-diagram {
+  background: var(--md-code-bg-color);
+  border-radius: 0.4rem;
+  font-family: var(--md-code-font);
+  font-size: 0.72rem;
+  line-height: 1.35;
+  overflow-x: auto;
+  padding: 1rem 1.25rem;
+  white-space: pre;
+}

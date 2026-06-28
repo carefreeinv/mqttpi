@@ -14,6 +14,8 @@ Configure pins, buses, and sensors in YAML; publish to an external MQTT broker w
 
 **Repository:** [github.com/carefreeinv/mqttpi](https://github.com/carefreeinv/mqttpi)
 
+**Documentation:** [carefreeinv.github.io/mqttpi](https://carefreeinv.github.io/mqttpi/)
+
 ## Features
 
 - **Pico W first** — flexible PWM mux, ADC, Wi-Fi; Pi 4/5 for serial/CAN/audio-heavy nodes
@@ -137,6 +139,11 @@ mqttpi/
 ```bash
 # BMS bridge tests (no BMS attached → expect serial timeout)
 PYTHONPATH=. python3 -m mqttpi.bms.bridge -c examples/jbd-bms.yaml --once -v
+
+# Documentation site (https://carefreeinv.github.io/mqttpi/)
+pip3 install -r requirements-docs.txt
+python3 scripts/stage_docs.py
+mkdocs serve
 ```
 
 See [CHANGELOG.md](CHANGELOG.md) for release history.
