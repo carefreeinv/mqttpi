@@ -15,7 +15,6 @@ Centralize venue I/O on one MQTT node: stage/bar/dance accent relays, entry door
 ## Quick Start
 
 ```bash
-cd /home/pi/mqttpi
 cp examples/sites/club.yaml config.yaml
 cp secrets.example.yaml secrets.yaml
 ```

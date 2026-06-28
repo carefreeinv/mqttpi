@@ -15,7 +15,6 @@ Give a mobile RV a single MQTT edge node for coach GPIO, fresh/grey/black tank l
 ## Quick Start
 
 ```bash
-cd /home/pi/mqttpi
 cp examples/sites/rv.yaml config.yaml
 cp secrets.example.yaml secrets.yaml
 ```

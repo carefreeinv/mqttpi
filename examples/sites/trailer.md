@@ -15,7 +15,6 @@ Provide essential trailer MQTT visibility—security (door, breakaway, motion), 
 ## Quick Start
 
 ```bash
-cd /home/pi/mqttpi
 cp examples/sites/trailer.yaml config.yaml
 cp secrets.example.yaml secrets.yaml
 ```

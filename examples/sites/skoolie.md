@@ -15,7 +15,6 @@ Monitor safety openings on a skoolie build, control lighting and climate relays,
 ## Quick Start
 
 ```bash
-cd /home/pi/mqttpi
 cp examples/sites/skoolie.yaml config.yaml
 cp secrets.example.yaml secrets.yaml
 ```

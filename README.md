@@ -21,17 +21,16 @@ Configure pins, buses, and sensors in YAML; publish to an external MQTT broker w
 - **HA by default** — discovery on, `ON`/`OFF` payloads, retained state topics
 - **Optional buses** — enable only what you need: 1-Wire, I2C, SPI, I2S, PWM
 - **Rich examples** — 36 configs with paired docs ([`examples/README.md`](examples/README.md))
-- **JBD BMS** — wired UART monitor (from abandoned `bms0` project) — **runnable today**
+- **JBD BMS** — wired UART monitor 
 - **Site templates** — RV, cargo trailer, semi, skoolie, house, robot, 32-relay bank, …
 
-## Status (v0.1.0)
+## Status (v0.1.3)
 
 | Component | Status |
 |-----------|--------|
 | Config schema & examples | Ready |
 | JBD BMS → MQTT → HA | **Implemented** (`mqttpi.bms.bridge`) |
 | GPIO / PWM / CAN / expanders | Config contract — daemon in progress |
-| First field project | [Cargo trailer](projects/cargo-trailer/) — **not live on broker yet** |
 
 ## Quick start
 
@@ -46,10 +45,7 @@ pip3 install -r requirements.txt
 ### 2. Pick an example
 
 ```bash
-# First project (cargo trailer) — use a dedicated Pico W, not a GPIO-busy Pi
-cp examples/sites/cargo-trailer.yaml config.yaml
-
-# Or any other example — see examples/README.md
+# Starter example — see examples/README.md for site templates and more
 cp examples/digital-in-out.yaml config.yaml
 
 cp secrets.example.yaml secrets.yaml
@@ -103,7 +99,6 @@ Enable the **MQTT** integration with **discovery** enabled. Entities appear afte
 |----------|-------|
 | All examples + docs | [`examples/README.md`](examples/README.md) |
 | Site / vehicle templates | [`examples/sites/`](examples/sites/) |
-| First deployment | [`projects/cargo-trailer/`](projects/cargo-trailer/) |
 | 32 relays (2× MCP23017) | [`examples/relay-bank-32.md`](examples/relay-bank-32.md) |
 | 8-zone speakers | [`examples/speaker-zones-8.md`](examples/speaker-zones-8.md) |
 | Robot rover | [`examples/robot.md`](examples/robot.md) |
@@ -126,7 +121,7 @@ mqttpi/
 │   └── bms/             # JBD UART bridge (implemented)
 ├── examples/            # YAML + markdown docs
 ├── projects/            # Deployment guides
-│   └── cargo-trailer/   # First field project
+│   └── cargo-trailer/
 └── mqttpi-bms.service   # systemd template
 ```
 
@@ -152,6 +147,5 @@ MIT — see [LICENSE](LICENSE).
 
 ## Acknowledgments
 
-- JBD BMS bridge adapted from the standalone **bms0** prototype
 - JBD protocol reference: [esphome-jbd-bms](https://github.com/syssi/esphome-jbd-bms)
 - Pinout reference: [pinout.xyz](https://pinout.xyz)

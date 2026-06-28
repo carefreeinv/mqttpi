@@ -15,7 +15,6 @@ Run a fully MQTT-integrated mobile workshop: interlocked tool power, lighting sc
 ## Quick Start
 
 ```bash
-cd /home/pi/mqttpi
 cp examples/sites/cargo-trailer-workshop.yaml config.yaml
 cp secrets.example.yaml secrets.yaml
 ```

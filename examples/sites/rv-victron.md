@@ -17,7 +17,6 @@ Mirror what a Cerbo GX does in split form: publish Victron battery/solar fields 
 ## Quick Start
 
 ```bash
-cd /home/pi/mqttpi
 cp examples/sites/rv-victron.yaml config.yaml
 cp secrets.example.yaml secrets.yaml
 ```

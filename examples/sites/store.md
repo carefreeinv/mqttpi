@@ -27,7 +27,6 @@ Typical use cases:
 ## Quick Start
 
 ```bash
-cd /home/pi/mqttpi
 cp examples/sites/store.yaml config.yaml
 cp secrets.example.yaml secrets.yaml
 # Edit mqtt.host, stream URLs, device.id

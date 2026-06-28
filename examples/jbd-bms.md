@@ -4,12 +4,9 @@
 
 Monitor a **JBD / Jiabaida** battery management system over a wired UART link and publish pack telemetry to MQTT with **Home Assistant discovery**. Typical use: LiFePO₄ house banks (Overkill Solar, many DIY packs) on a **Raspberry Pi** co-located with the BMS.
 
-This example was **migrated from `~/bms0`** into `mqttpi/bms/` as the first fully implemented protocol bridge in the repo.
-
 ## Quick start
 
 ```bash
-cd /home/pi/mqttpi
 cp examples/jbd-bms.yaml config.yaml
 cp secrets.example.yaml secrets.yaml
 # Edit mqtt.host, bms.port, secrets.yaml credentials
@@ -20,7 +17,7 @@ python3 -m mqttpi.bms.bridge --once -v
 # Continuous bridge (foreground)
 python3 -m mqttpi.bms.bridge -v
 
-# Optional systemd service
+# Optional systemd service (defaults to ~/mqttpi — edit unit paths if needed)
 sudo cp mqttpi-bms.service /etc/systemd/system/
 sudo systemctl enable --now mqttpi-bms.service
 ```
@@ -116,7 +113,7 @@ Default `device_id`: `jbd_house_pack` (from `bms.ha.device_id`). Device name: **
 2. **9600 8N1 fixed default** — Matches factory JBD wiring; higher baud rates are not supported by most packs.
 3. **30 s poll interval** — Reduces UART contention and BMS wear; tighten in config if you need faster updates for automation.
 4. **Separate from Victron / CAN** — JBD UART is independent of VE.Direct, VE.Can, and RV-C. Many skoolies run JBD for the house pack *and* Victron for solar/shunt on another port.
-5. **Migrated topic layout** — Uses `mqttpi/{device-id}` style (not `mobile/`) to stay compatible with the original `bms0` deployment.
+5. **Topic layout** — Uses `mqttpi/{device-id}` as the default `base_topic` prefix for BMS telemetry.
 6. **Discovery on first good read** — Cell count is taken from the live BMS response so per-cell entities match the actual pack.
 
 ## FAQ

@@ -1,3 +1,6 @@
+# mqttpi JBD BMS bridge — assumes repo cloned to ~/mqttpi for User=pi
+# Edit WorkingDirectory and -c/-s paths if you installed elsewhere.
+
 [Unit]
 Description=mqttpi JBD BMS MQTT bridge
 After=network-online.target
@@ -6,8 +9,8 @@ Wants=network-online.target
 [Service]
 Type=simple
 User=pi
-WorkingDirectory=/home/pi/mqttpi
-ExecStart=/usr/bin/python3 -m mqttpi.bms.bridge -c /home/pi/mqttpi/config.yaml -s /home/pi/mqttpi/secrets.yaml
+WorkingDirectory=%h/mqttpi
+ExecStart=/usr/bin/python3 -m mqttpi.bms.bridge -c %h/mqttpi/config.yaml -s %h/mqttpi/secrets.yaml
 Restart=on-failure
 RestartSec=10
 

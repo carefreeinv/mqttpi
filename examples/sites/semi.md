@@ -15,7 +15,6 @@ Give owner-operators and small fleets MQTT/HA visibility into tire pressure acro
 ## Quick Start
 
 ```bash
-cd /home/pi/mqttpi
 cp examples/sites/semi.yaml config.yaml
 cp secrets.example.yaml secrets.yaml
 ```

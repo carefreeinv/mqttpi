@@ -15,7 +15,6 @@ Expose JBD lithium house battery telemetry (voltage, current, SOC, cell data per
 ## Quick Start
 
 ```bash
-cd /home/pi/mqttpi
 cp examples/sites/skoolie-bms.yaml config.yaml
 cp secrets.example.yaml secrets.yaml
 ```

@@ -15,7 +15,6 @@ Help owners verify sleds are secured before transit, control heat and lights for
 ## Quick Start
 
 ```bash
-cd /home/pi/mqttpi
 cp examples/sites/snowmobile-trailer.yaml config.yaml
 cp secrets.example.yaml secrets.yaml
 ```

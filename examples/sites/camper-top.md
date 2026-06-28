@@ -15,7 +15,6 @@ Integrate truck and camper monitoring on one node: tire pressure for the **picku
 ## Quick Start
 
 ```bash
-cd /home/pi/mqttpi
 cp examples/sites/camper-top.yaml config.yaml
 cp secrets.example.yaml secrets.yaml
 ```

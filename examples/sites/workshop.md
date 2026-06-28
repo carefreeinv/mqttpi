@@ -15,7 +15,6 @@ Provide MQTT/HA visibility and control for a small shop: door and motion sensing
 ## Quick Start
 
 ```bash
-cd /home/pi/mqttpi
 cp examples/sites/workshop.yaml config.yaml
 cp secrets.example.yaml secrets.yaml
 ```

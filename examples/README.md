@@ -37,7 +37,7 @@ Runtime merges `secrets.yaml` onto `config.yaml`. Home Assistant MQTT **discover
 
 | Config | Doc | Summary |
 |--------|-----|---------|
-| `jbd-bms.yaml` | [jbd-bms.md](jbd-bms.md) | JBD BMS UART (Pi, from bms0) |
+| `jbd-bms.yaml` | [jbd-bms.md](jbd-bms.md) | JBD BMS UART (Pi) |
 | `level-accelerometer.yaml` | [level-accelerometer.md](level-accelerometer.md) | I2C MPU6050 level |
 | `tpms.yaml` | [tpms.md](tpms.md) | Tire pressure (UART receiver) |
 | `can-vehicle.yaml` | [can-vehicle.md](can-vehicle.md) | OBD-II read @ 500k |
@@ -66,10 +66,8 @@ Runtime merges `secrets.yaml` onto `config.yaml`. Home Assistant MQTT **discover
 | [semi.yaml](sites/semi.yaml) | [semi.md](sites/semi.md) |
 | [rv-victron.yaml](sites/rv-victron.yaml) | [rv-victron.md](sites/rv-victron.md) |
 
-## First project
+## Deployment guides
 
 | Guide | Config |
 |-------|--------|
 | [projects/cargo-trailer/README.md](../projects/cargo-trailer/README.md) | [sites/cargo-trailer.yaml](sites/cargo-trailer.yaml) |
-
-Not registered on the central broker yet — deploy on a **dedicated Pico W**.

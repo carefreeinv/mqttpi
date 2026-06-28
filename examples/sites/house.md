@@ -23,7 +23,6 @@ Typical use cases:
 ## Quick Start
 
 ```bash
-cd /home/pi/mqttpi
 cp examples/sites/house.yaml config.yaml
 cp secrets.example.yaml secrets.yaml
 # Edit mqtt.host, device.id, and secrets.yaml credentials

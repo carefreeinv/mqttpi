@@ -1,4 +1,4 @@
-# JBD BMS — wired UART monitor (migrated from bms0)
+# JBD BMS — wired UART monitor
 #
 # JBD / Jiabaida protocol @ 9600 8N1. Overkill Solar, many LiFePO₄ packs.
 # Requires Linux Pi (serial port). Pico W cannot run this daemon.

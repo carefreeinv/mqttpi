@@ -1,35 +1,33 @@
-# First project: Cargo trailer
+# Cargo trailer deployment
 
-This deployment uses [`examples/sites/cargo-trailer.yaml`](../../examples/sites/cargo-trailer.yaml).
+This guide walks through deploying the cargo trailer site template on a dedicated **Pico W** node.
+
+**Config:** [`examples/sites/cargo-trailer.yaml`](../../examples/sites/cargo-trailer.yaml)
 
 **Documentation:** [`examples/sites/cargo-trailer.md`](../../examples/sites/cargo-trailer.md)
 
-## Status
+## Hardware
 
-| Item | State |
+| Item | Notes |
 |------|-------|
-| Target hardware | **Raspberry Pi Pico W** (dedicated node) |
+| Board | **Raspberry Pi Pico W** (dedicated node) |
 | Config template | `examples/sites/cargo-trailer.yaml` |
-| Central MQTT broker | **Not registered yet** — intentional |
-| Run on shared Pi 4 | **No** — dev Pi (`carefreeinv` / 192.168.x) already uses most GPIO |
-| mqttpi daemon / bridge | **Not started** — no `config.yaml` on this host |
+| Logic level | 3.3 V — use level shifters / optocouplers for 12 V trailer signals |
 
-## Why not on this Pi?
+Use a dedicated Pico W mounted in or near the trailer. A shared or GPIO-heavy host is a poor fit for this I/O layout.
 
-The development Pi (`Raspberry Pi 4`) is GPIO-constrained. Cargo trailer I/O belongs on a **separate Pico W** mounted in or near the trailer, talking to the broker over Wi-Fi when you are ready to go live.
+## Setup checklist
 
-## Before go-live checklist
-
-1. [ ] Flash or install mqttpi on a **dedicated Pico W** (not the shared Pi 4).
-2. [ ] Audit pins — confirm no overlap with other projects on that board.
+1. [ ] Flash or install mqttpi on a **dedicated Pico W**.
+2. [ ] Audit pins — confirm no overlap with other peripherals on that board.
 3. [ ] `cp examples/sites/cargo-trailer.yaml config.yaml`
-4. [ ] `cp secrets.example.yaml secrets.yaml` — set broker host/credentials.
+4. [ ] `cp secrets.example.yaml secrets.yaml` — set broker host and credentials.
 5. [ ] Change `device.id` if `cargo-trailer` collides on the broker.
 6. [ ] Wire through 3.3 V level shifters / optocouplers for 12 V trailer signals.
 7. [ ] Test with `poll_interval` / dry-run before enabling retained command topics.
-8. [ ] Register with central broker only after bench test passes.
+8. [ ] Verify entities in Home Assistant after the bridge publishes discovery payloads.
 
-## Entities (preview)
+## Entities
 
 | HA entity | GPIO | Role |
 |-----------|------|------|
@@ -43,12 +41,10 @@ The development Pi (`Raspberry Pi 4`) is GPIO-constrained. Cargo trailer I/O bel
 | `binary_sensor.brake_connection` | GP11 | Trailer connected |
 | `binary_sensor.temp_probe_alert` | GP20 | High-temp input |
 
-## MQTT namespace (when enabled)
+## MQTT namespace
 
 ```
 mobile/cargo-trailer/gpio/<alias>/state
 mobile/cargo-trailer/gpio/<alias>/set
 mobile/cargo-trailer/status
 ```
-
-Do **not** copy `config.yaml` to the shared Pi root until a dedicated board is assigned.

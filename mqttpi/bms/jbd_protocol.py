@@ -1,4 +1,4 @@
-"""JBD / Jiabaida BMS protocol — framing and parsing (from bms0)."""
+"""JBD / Jiabaida BMS protocol — framing and parsing."""
 
 from __future__ import annotations
 

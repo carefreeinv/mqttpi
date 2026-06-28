@@ -15,7 +15,6 @@ Consolidate motorhome coach monitoring on one edge node: power source detection 
 ## Quick Start
 
 ```bash
-cd /home/pi/mqttpi
 cp examples/sites/motorhome.yaml config.yaml
 cp secrets.example.yaml secrets.yaml
 ```

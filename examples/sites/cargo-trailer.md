@@ -15,7 +15,6 @@ Monitor cargo access points, provide work lighting control, detect motion in the
 ## Quick Start
 
 ```bash
-cd /home/pi/mqttpi
 cp examples/sites/cargo-trailer.yaml config.yaml
 cp secrets.example.yaml secrets.yaml
 ```

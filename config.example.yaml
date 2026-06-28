@@ -6,7 +6,7 @@
 #   ./examples/          — generic (relay, PWM, HA reference, …)
 #   ./examples/sites/    — location templates (house, store, rv, semi, camper-top, …)
 #   ./examples/tpms.yaml — tire pressure reference
-#   ./examples/jbd-bms.yaml — JBD BMS UART (Pi only, from bms0)
+#   ./examples/jbd-bms.yaml — JBD BMS UART (Pi only)
 #
 #   cp examples/sites/house.yaml config.yaml
 #   cp examples/digital-in-out.yaml config.yaml
