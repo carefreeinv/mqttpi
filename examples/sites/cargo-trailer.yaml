@@ -1,0 +1,105 @@
+# Site: Cargo Trailer — cargo door, interior work light, motion, tie-down zone
+#
+# Enclosed cargo: rear ramp/door, interior LED bay, motion for security.
+#
+#   cp examples/sites/cargo-trailer.yaml config.yaml
+
+device:
+  id: cargo-trailer
+  board: picow
+  profile: maximum_gpio
+  ha:
+    name: "Cargo Trailer"
+    manufacturer: mqttpi
+    model: picow
+
+mqtt:
+  host: 192.168.1.50
+  port: 1883
+  tls: false
+  base_topic: mobile/cargo-trailer
+  client_id: mqttpi-cargo-trailer
+  homeassistant:
+    discovery: true
+    discovery_prefix: homeassistant
+  payload_on: "ON"
+  payload_off: "OFF"
+  retain: true
+  qos: 1
+
+buses:
+  onewire: { enabled: false, pin: 7 }
+  i2c:     { enabled: false, controller: 0, sda: 0, scl: 1 }
+  spi:     { enabled: false, controller: 0, sck: 2, mosi: 3, miso: 4, cs: 5 }
+  i2s:     { enabled: false, bclk: 16, lrck: 17, din: 18, dout: 19 }
+
+pwm:
+  enabled: false
+  pins: [8, 9, 10, 11, 12, 13, 14, 15]
+
+mqtt_aliases:
+  ramp_door_contact: ramp_door
+  side_door_contact: side_door
+
+pins:
+  - pin: 0
+    alias: ramp_door
+    direction: input
+    pull: up
+    invert: true
+    debounce_ms: 50
+    ha: { name: "Ramp Door", device_class: garage_door }
+
+  - pin: 1
+    alias: side_door
+    direction: input
+    pull: up
+    invert: true
+    debounce_ms: 50
+    ha: { name: "Side Door", device_class: door }
+
+  - pin: 2
+    alias: interior_bay
+    direction: output
+    initial: false
+    ha: { name: "Interior Bay Lights", icon: mdi:lightbulb-fluorescent-tube }
+
+  - pin: 3
+    alias: exterior_work
+    direction: output
+    initial: false
+    ha: { name: "Exterior Work Light", icon: mdi:car-light-high }
+
+  - pin: 4
+    alias: accent_strip
+    direction: output
+    initial: false
+    ha: { name: "Accent Strip", icon: mdi:led-strip }
+
+  - pin: 6
+    alias: motion_cargo
+    direction: input
+    pull: down
+    debounce_ms: 300
+    ha: { name: "Cargo Bay Motion", device_class: motion }
+
+  - pin: 10
+    alias: tie_down_zone
+    direction: input
+    pull: up
+    debounce_ms: 100
+    ha: { name: "Tie-Down Anchor Armed", device_class: safety }
+
+  - pin: 11
+    alias: brake_connection
+    direction: input
+    pull: down
+    debounce_ms: 50
+    ha: { name: "Trailer Connected", device_class: connectivity }
+
+  - pin: 20
+    alias: temp_probe_alert
+    direction: input
+    pull: down
+    debounce_ms: 500
+    ha: { name: "High Temp Alert", device_class: heat }

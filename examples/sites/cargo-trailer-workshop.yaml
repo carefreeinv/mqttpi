@@ -1,0 +1,171 @@
+# Site: Cargo Trailer Workshop — mobile shop with tool circuits & I2S alert SFX
+#
+# Pi 4 in a converted cargo trailer: machine outlets, dust collector, bay door,
+# work/accent lighting, HVAC, numbered SFX for shift start/end and hazard alerts.
+#
+#   cp examples/sites/cargo-trailer-workshop.yaml config.yaml
+#
+# I2S → DAC/amp; drop WAVs in /opt/mqttpi/sfx/workshop/ as 01.wav … 10.wav
+# HA automation example: door opens → MQTT publish "3" to {base_topic}/sfx/play
+
+device:
+  id: cargo-workshop
+  board: pi4
+  profile: sensors
+  ha:
+    name: "Cargo Trailer Workshop"
+    manufacturer: mqttpi
+    model: pi4
+
+mqtt:
+  host: 192.168.1.50
+  port: 1883
+  tls: false
+  base_topic: mobile/cargo-workshop
+  client_id: mqttpi-cargo-workshop
+  homeassistant:
+    discovery: true
+    discovery_prefix: homeassistant
+  payload_on: "ON"
+  payload_off: "OFF"
+  retain: true
+  qos: 1
+
+buses:
+  onewire: { enabled: true, pin: 4 }
+  i2c:     { enabled: true, controller: 1, sda: 2, scl: 3 }
+  spi:     { enabled: false, controller: 0, sck: 11, mosi: 10, miso: 9, cs: 8 }
+  i2s:
+    enabled: true
+    bclk: 18
+    lrck: 19
+    din: 20
+    dout: 21
+    sfx:
+      enabled: true
+      directory: /opt/mqttpi/sfx/workshop
+      command_topic: "{base_topic}/sfx/play"
+      state_topic: "{base_topic}/sfx/status"
+      play_by_number: true
+      stop_topic: "{base_topic}/sfx/stop"
+      tracks:
+        - number: 1
+          alias: shift_start
+          file: "01-shift-start.wav"
+          ha: { name: "SFX Shift Start", icon: mdi:bell-ring }
+        - number: 2
+          alias: shift_end
+          file: "02-shift-end.wav"
+          ha: { name: "SFX Shift End", icon: mdi:bell-off }
+        - number: 3
+          alias: door_alert
+          file: "03-door-open.wav"
+          ha: { name: "SFX Door Open Alert", icon: mdi:door-open }
+        - number: 4
+          alias: dust_collector_on
+          file: "04-dust-on.wav"
+          ha: { name: "SFX Dust Collector On", icon: mdi:fan }
+        - number: 5
+          alias: hazard_stop
+          file: "05-e-stop.wav"
+          ha: { name: "SFX E-Stop Alarm", icon: mdi:alert }
+        - number: 6
+          alias: welding_active
+          file: "06-welding.wav"
+          ha: { name: "SFX Welding Reminder", icon: mdi:welding }
+        - number: 7
+          alias: break_chime
+          file: "07-break.wav"
+          ha: { name: "SFX Break Chime", icon: mdi:coffee }
+        - number: 8
+          alias: low_power
+          file: "08-low-power.wav"
+          ha: { name: "SFX Low Shore Power", icon: mdi:flash-alert }
+
+pwm:
+  enabled: true
+  pins: [12, 13]
+
+mqtt_aliases:
+  ramp_door_contact: bay_door
+  shore_power_sense: shore_connected
+
+pins:
+  - pin: 5
+    alias: bay_door
+    direction: input
+    pull: up
+    invert: true
+    debounce_ms: 50
+    ha: { name: "Bay Ramp Door", device_class: garage_door }
+
+  - pin: 6
+    alias: side_access
+    direction: input
+    pull: up
+    invert: true
+    debounce_ms: 50
+    ha: { name: "Side Access Door", device_class: door }
+
+  - pin: 16
+    alias: motion_shop
+    direction: input
+    pull: down
+    debounce_ms: 300
+    ha: { name: "Shop Motion", device_class: motion }
+
+  - pin: 17
+    alias: shore_connected
+    direction: input
+    pull: down
+    debounce_ms: 200
+    ha: { name: "Shore Power", device_class: power }
+
+  - pin: 22
+    alias: dust_collector
+    direction: output
+    initial: false
+    ha: { name: "Dust Collector", icon: mdi:fan }
+
+  - pin: 23
+    alias: table_saw
+    direction: output
+    initial: false
+    ha: { name: "Table Saw Circuit", icon: mdi:saw-blade }
+
+  - pin: 24
+    alias: compressor
+    direction: output
+    initial: false
+    ha: { name: "Air Compressor", icon: mdi:air-compressor }
+
+  - pin: 25
+    alias: welder_circuit
+    direction: output
+    initial: false
+    ha: { name: "Welder Outlet", icon: mdi:welding }
+
+  - pin: 27
+    alias: work_overhead
+    direction: output
+    initial: false
+    ha: { name: "Work Overhead Lights", icon: mdi:ceiling-light-multiple }
+
+  - pin: 14
+    alias: accent_bench
+    direction: output
+    initial: false
+    ha: { name: "Bench Accent", icon: mdi:desk-lamp }
+
+  - pin: 26
+    alias: hvac_cool
+    direction: output
+    initial: false
+    ha: { name: "Shop HVAC Cool", icon: mdi:snowflake }
+
+  - pin: 12
+    alias: overhead_dim
+    direction: pwm_output
+    frequency_hz: 1000
+    initial_duty: 0
+    ha: { name: "Overhead Dimmer", min: 0, max: 100, unit_of_measurement: "%" }

@@ -1,0 +1,176 @@
+# Site: Skoolie — exit sensors, solar, climate, I2C level sensor
+#
+# Emergency exits, roof hatches, solar relay, diesel/alt engine sense.
+# Level sensor: mount MPU6050 under chassis floor or rear axle area.
+#
+#   cp examples/sites/skoolie.yaml config.yaml
+
+device:
+  id: skoolie-main
+  board: picow
+  profile: sensors
+  ha:
+    name: "Skoolie"
+    manufacturer: mqttpi
+    model: picow
+
+mqtt:
+  host: 192.168.1.50
+  port: 1883
+  tls: false
+  base_topic: mobile/skoolie
+  client_id: mqttpi-skoolie-main
+  homeassistant:
+    discovery: true
+    discovery_prefix: homeassistant
+  payload_on: "ON"
+  payload_off: "OFF"
+  retain: true
+  qos: 1
+
+buses:
+  onewire: { enabled: true, pin: 7 }
+  i2c:     { enabled: true, controller: 0, sda: 0, scl: 1 }
+  spi:     { enabled: false, controller: 0, sck: 2, mosi: 3, miso: 4, cs: 5 }
+  i2s:     { enabled: false, bclk: 16, lrck: 17, din: 18, dout: 19 }
+
+pwm:
+  enabled: true
+  pins: [8, 9, 10, 11, 12, 13, 14, 15]
+
+mqtt_aliases:
+  rear_exit_alarm: rear_exit
+  roof_hatch_contact: roof_hatch
+
+sensors:
+  level:
+    enabled: true
+    bus: i2c
+    chip: mpu6050
+    address: 0x68
+    mount: floor_plane
+    calibration:
+      mode: on_boot
+      command_topic: "{base_topic}/level/calibrate"
+    publish:
+      interval_ms: 2000
+      retain: true
+    readings:
+      pitch:
+        alias: level_pitch
+        ha:
+          name: "Level Pitch"
+          state_class: measurement
+          unit_of_measurement: "°"
+          icon: mdi:angle-acute
+      roll:
+        alias: level_roll
+        ha:
+          name: "Level Roll"
+          state_class: measurement
+          unit_of_measurement: "°"
+          icon: mdi:angle-acute
+      deviation:
+        alias: level_deviation
+        type: max_abs
+        ha:
+          name: "Level Deviation"
+          state_class: measurement
+          unit_of_measurement: "°"
+          icon: mdi:spirit-level
+      is_level:
+        alias: is_level
+        type: binary
+        threshold_deg: 1.5
+        ha:
+          name: "Level OK"
+          icon: mdi:check-circle
+
+pins:
+  - pin: 2
+    alias: entry_door
+    direction: input
+    pull: up
+    invert: true
+    debounce_ms: 50
+    ha: { name: "Entry Door", device_class: door }
+
+  - pin: 3
+    alias: rear_exit
+    direction: input
+    pull: up
+    invert: true
+    debounce_ms: 30
+    ha: { name: "Rear Emergency Exit", device_class: opening }
+
+  - pin: 4
+    alias: side_exit
+    direction: input
+    pull: up
+    invert: true
+    debounce_ms: 30
+    ha: { name: "Side Emergency Exit", device_class: opening }
+
+  - pin: 6
+    alias: roof_hatch
+    direction: input
+    pull: up
+    invert: true
+    debounce_ms: 50
+    ha: { name: "Roof Hatch", device_class: opening }
+
+  - pin: 20
+    alias: engine_running
+    direction: input
+    pull: down
+    debounce_ms: 500
+    ha: { name: "Engine Running", device_class: running }
+
+  - pin: 21
+    alias: solar_enable
+    direction: output
+    initial: true
+    ha: { name: "Solar Charge Enable", icon: mdi:solar-power }
+
+  - pin: 22
+    alias: galley_lights
+    direction: output
+    initial: false
+    ha: { name: "Galley Lights", icon: mdi:stove }
+
+  - pin: 16
+    alias: lounge_accent
+    direction: output
+    initial: false
+    ha: { name: "Lounge Accent", icon: mdi:sofa }
+
+  - pin: 17
+    alias: bunk_accent
+    direction: output
+    initial: false
+    ha: { name: "Bunk Accent", icon: mdi:bunk-bed }
+
+  - pin: 18
+    alias: hvac_front
+    direction: output
+    initial: false
+    ha: { name: "Front Mini-Split", icon: mdi:air-conditioner }
+
+  - pin: 19
+    alias: hvac_rear
+    direction: output
+    initial: false
+    ha: { name: "Rear Mini-Split", icon: mdi:air-conditioner }
+
+  - pin: 26
+    alias: diesel_heat
+    direction: output
+    initial: false
+    ha: { name: "Diesel Furnace", icon: mdi:fire }
+
+  - pin: 8
+    alias: lounge_dim
+    direction: pwm_output
+    frequency_hz: 1000
+    initial_duty: 0
+    ha: { name: "Lounge Dimmer", min: 0, max: 100, unit_of_measurement: "%" }

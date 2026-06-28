@@ -1,0 +1,81 @@
+# Servo controller — HA number entities at 50 Hz
+#
+#   cp examples/servo-controller.yaml config.yaml
+#
+# Duty 0-100% maps to servo position. Calibrate min/max in HA automations.
+
+device:
+  id: servo-01
+  board: picow
+  profile: pwm_only
+  ha:
+    name: "Servo Controller"
+
+mqtt:
+  host: 192.168.1.50
+  port: 1883
+  tls: false
+  base_topic: mqttpi/servo-01
+  client_id: mqttpi-servo-01
+  homeassistant:
+    discovery: true
+    discovery_prefix: homeassistant
+  retain: true
+  qos: 1
+
+buses:
+  onewire: { enabled: false, pin: 7 }
+  i2c:     { enabled: false, controller: 0, sda: 0, scl: 1 }
+  spi:     { enabled: false, controller: 0, sck: 2, mosi: 3, miso: 4, cs: 5 }
+  i2s:     { enabled: false, bclk: 16, lrck: 17, din: 18, dout: 19 }
+
+pwm:
+  enabled: true
+  pins: [8, 9, 10, 11, 12, 13, 14, 15]
+
+mqtt_aliases: {}
+
+pins:
+  - pin: 8
+    alias: servo_pan
+    direction: pwm_output
+    frequency_hz: 50
+    initial_duty: 7
+    ha:
+      name: "Servo Pan"
+      min: 0
+      max: 100
+      step: 1
+
+  - pin: 9
+    alias: servo_tilt
+    direction: pwm_output
+    frequency_hz: 50
+    initial_duty: 7
+    ha:
+      name: "Servo Tilt"
+      min: 0
+      max: 100
+      step: 1
+
+  - pin: 10
+    alias: servo_grip
+    direction: pwm_output
+    frequency_hz: 50
+    initial_duty: 0
+    ha:
+      name: "Servo Grip"
+      min: 0
+      max: 100
+      step: 1
+
+  - pin: 11
+    alias: servo_aux
+    direction: pwm_output
+    frequency_hz: 50
+    initial_duty: 0
+    ha:
+      name: "Servo Aux"
+      min: 0
+      max: 100
+      step: 1

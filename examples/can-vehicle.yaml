@@ -1,0 +1,100 @@
+# CAN — vehicle read-only (OBD-II / J1939 sniff + requested PIDs)
+#
+# Pico W has NO built-in CAN controller. Use either:
+#   A) MCP2515 SPI module + TJA1050 transceiver (common ~$5 adapter board)
+#   B) can2040 (PIO software CAN) + external transceiver on 2 GPIO + CAN-H/L
+#
+# This example: MCP2515 on SPI0 with listen-only + selective PID requests.
+# Vehicle harness: CAN-H / CAN-L via OBD port or chassis tap (DIY at own risk).
+#
+#   cp examples/can-vehicle.yaml config.yaml
+
+device:
+  id: vehicle-can-01
+  board: picow
+  profile: sensors
+  ha:
+    name: "Vehicle CAN"
+    manufacturer: mqttpi
+    model: picow
+
+mqtt:
+  host: 192.168.1.50
+  port: 1883
+  tls: false
+  base_topic: mobile/vehicle-can-01
+  client_id: mqttpi-vehicle-can-01
+  homeassistant:
+    discovery: true
+    discovery_prefix: homeassistant
+  retain: true
+  qos: 1
+
+buses:
+  onewire: { enabled: false, pin: 7 }
+  i2c:     { enabled: false, controller: 0, sda: 0, scl: 1 }
+  spi:
+    enabled: true
+    controller: 0
+    sck: 2
+    mosi: 3
+    miso: 4
+    cs: 5
+  i2s:     { enabled: false, bclk: 16, lrck: 17, din: 18, dout: 19 }
+  can:
+    enabled: true
+    backend: mcp2515
+    spi_controller: 0
+    cs: 5
+    int: 6
+    oscillator_hz: 16000000
+    bitrate: 500000
+    mode: read
+    frame_format: both
+    termination_ohm: 120
+
+pwm:
+  enabled: false
+  pins: [8, 9, 10, 11, 12, 13, 14, 15]
+
+mqtt_aliases: {}
+
+# Decode rules → HA sensors (implementation maps PIDs/PGNs to MQTT)
+can:
+  publish:
+    retain: true
+    topic: "{base_topic}/can/frame"
+  listen:
+    - name: engine_rpm
+      standard: obd2
+      mode: request
+      pid: "0x0C"
+      interval_ms: 1000
+      alias: engine_rpm
+      ha:
+        name: "Engine RPM"
+        state_class: measurement
+        unit_of_measurement: "rpm"
+    - name: vehicle_speed
+      standard: obd2
+      mode: request
+      pid: "0x0D"
+      interval_ms: 1000
+      alias: vehicle_speed
+      ha:
+        name: "Vehicle Speed"
+        state_class: measurement
+        unit_of_measurement: "km/h"
+    - name: coolant_temp
+      standard: obd2
+      mode: request
+      pid: "0x05"
+      interval_ms: 5000
+      alias: coolant_temp
+      ha:
+        name: "Coolant Temperature"
+        device_class: temperature
+        state_class: measurement
+        unit_of_measurement: "°C"
+
+pins: []

@@ -1,0 +1,139 @@
+# Site: Club — venue lighting zones, entry, HVAC, I2S announcement SFX
+#
+# Pi 4 with I2S amp: numbered tracks for last-call, closing, VIP alert, etc.
+# GPIO drives stage accent, bar, dance floor, entry mag-lock relay.
+#
+#   cp examples/sites/club.yaml config.yaml
+
+device:
+  id: club-venue
+  board: pi4
+  profile: full_peripherals
+  ha:
+    name: "Club Venue"
+    manufacturer: mqttpi
+    model: pi4
+
+mqtt:
+  host: 192.168.1.50
+  port: 1883
+  tls: false
+  base_topic: site/club
+  client_id: mqttpi-club-venue
+  homeassistant:
+    discovery: true
+    discovery_prefix: homeassistant
+  payload_on: "ON"
+  payload_off: "OFF"
+  retain: true
+  qos: 1
+
+buses:
+  onewire: { enabled: true, pin: 4 }
+  i2c:     { enabled: true, controller: 1, sda: 2, scl: 3 }
+  spi:     { enabled: false, controller: 0, sck: 11, mosi: 10, miso: 9, cs: 8 }
+  i2s:
+    enabled: true
+    bclk: 18
+    lrck: 19
+    din: 20
+    dout: 21
+    sfx:
+      enabled: true
+      directory: /opt/mqttpi/sfx/club
+      command_topic: "{base_topic}/sfx/play"
+      play_by_number: true
+      tracks:
+        - number: 1
+          alias: last_call
+          file: "01-last-call.wav"
+          ha: { name: "SFX Last Call" }
+        - number: 2
+          alias: closing_time
+          file: "02-closing.wav"
+          ha: { name: "SFX Closing" }
+        - number: 3
+          alias: vip_alert
+          file: "03-vip.wav"
+          ha: { name: "SFX VIP Alert" }
+        - number: 4
+          alias: emergency_tone
+          file: "04-emergency.wav"
+          ha: { name: "SFX Emergency Tone" }
+        - number: 5
+          alias: welcome
+          file: "05-welcome.wav"
+          ha: { name: "SFX Welcome" }
+
+pwm:
+  enabled: true
+  pins: [12, 13]
+
+mqtt_aliases: {}
+
+pins:
+  - pin: 5
+    alias: entry_door
+    direction: input
+    pull: up
+    invert: true
+    debounce_ms: 30
+    ha: { name: "Entry Door", device_class: door }
+
+  - pin: 6
+    alias: occupancy_hall
+    direction: input
+    pull: down
+    debounce_ms: 300
+    ha: { name: "Hall Occupancy", device_class: occupancy }
+
+  - pin: 16
+    alias: fire_exit
+    direction: input
+    pull: up
+    invert: true
+    debounce_ms: 50
+    ha: { name: "Fire Exit", device_class: opening }
+
+  - pin: 17
+    alias: stage_accent
+    direction: output
+    initial: false
+    ha: { name: "Stage Accent", icon: mdi:spotlight-beam }
+
+  - pin: 22
+    alias: bar_accent
+    direction: output
+    initial: false
+    ha: { name: "Bar Accent", icon: mdi:glass-cocktail }
+
+  - pin: 23
+    alias: dance_accent
+    direction: output
+    initial: false
+    ha: { name: "Dance Floor Accent", icon: mdi:disco-ball }
+
+  - pin: 24
+    alias: entry_lock
+    direction: output
+    initial: true
+    ha: { name: "Entry Mag Lock", icon: mdi:lock }
+
+  - pin: 25
+    alias: hvac_supply
+    direction: output
+    initial: false
+    ha: { name: "HVAC Supply Fan", icon: mdi:fan }
+
+  - pin: 27
+    alias: hvac_cool
+    direction: output
+    initial: false
+    ha: { name: "HVAC Cooling", icon: mdi:snowflake }
+
+  - pin: 12
+    alias: stage_dim
+    direction: pwm_output
+    frequency_hz: 1000
+    initial_duty: 0
+    ha: { name: "Stage Dimmer", min: 0, max: 100, unit_of_measurement: "%" }

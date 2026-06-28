@@ -1,0 +1,91 @@
+# Site: Skoolie — JBD house battery BMS + level + coach GPIO
+#
+# Solar skoolie: JBD BMS on USB-TTL, MPU6050 level, GPIO for lights/HVAC.
+# Pair with Victron via examples/sites/rv-victron.yaml pattern if needed.
+#
+#   cp examples/sites/skoolie-bms.yaml config.yaml
+
+device:
+  id: skoolie-bms
+  board: pi4
+  ha:
+    name: "Skoolie Power"
+
+mqtt:
+  host: 192.168.1.50
+  port: 1883
+  tls: false
+  base_topic: mobile/skoolie-bms
+  client_id: mqttpi-skoolie-bms
+  homeassistant:
+    discovery: true
+    discovery_prefix: homeassistant
+  payload_on: "ON"
+  payload_off: "OFF"
+  retain: true
+  qos: 1
+
+bms:
+  enabled: true
+  protocol: jbd
+  port: /dev/ttyUSB0
+  baudrate: 9600
+  response_timeout: 2
+  poll_interval: 30
+  retry_delay: 10
+  ha:
+    name: "Skoolie House Pack"
+    device_id: jbd_skoolie_house
+
+buses:
+  onewire: { enabled: true, pin: 4 }
+  i2c:     { enabled: true, controller: 1, sda: 2, scl: 3 }
+  spi:     { enabled: false, controller: 0, sck: 11, mosi: 10, miso: 9, cs: 8 }
+  i2s:     { enabled: false, bclk: 18, lrck: 19, din: 20, dout: 21 }
+
+pwm:
+  enabled: false
+  pins: [12, 13]
+
+sensors:
+  level:
+    enabled: true
+    bus: i2c
+    chip: mpu6050
+    address: 0x68
+    mount: floor_plane
+    calibration:
+      mode: on_boot
+      command_topic: "{base_topic}/level/calibrate"
+    publish: { interval_ms: 2000, retain: true }
+    readings:
+      pitch:  { alias: level_pitch, ha: { name: "Pitch", unit_of_measurement: "°" } }
+      roll:   { alias: level_roll,  ha: { name: "Roll",  unit_of_measurement: "°" } }
+      is_level: { alias: is_level, type: binary, threshold_deg: 1.5, ha: { name: "Level OK" } }
+
+pins:
+  - pin: 17
+    alias: solar_enable
+    direction: output
+    initial: true
+    ha: { name: "Solar Charge Enable", icon: mdi:solar-power }
+
+  - pin: 22
+    alias: galley_lights
+    direction: output
+    initial: false
+    ha: { name: "Galley Lights", icon: mdi:stove }
+
+  - pin: 23
+    alias: diesel_heat
+    direction: output
+    initial: false
+    ha: { name: "Diesel Furnace", icon: mdi:fire }
+
+  - pin: 27
+    alias: entry_door
+    direction: input
+    pull: up
+    invert: true
+    debounce_ms: 50
+    ha: { name: "Entry Door", device_class: door }

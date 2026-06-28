@@ -1,0 +1,70 @@
+# Raspberry Pi 4/5 — HA number (PWM) + switch
+#
+#   cp examples/pi4-pwm-relay.yaml config.yaml
+
+device:
+  id: pi4-pwm-01
+  board: pi4
+  profile: pwm_only
+  ha:
+    name: "Pi 4 PWM Node"
+
+mqtt:
+  host: 192.168.1.50
+  port: 1883
+  tls: false
+  base_topic: mqttpi/pi4-pwm-01
+  client_id: mqttpi-pi4-pwm-01
+  homeassistant:
+    discovery: true
+    discovery_prefix: homeassistant
+  payload_on: "ON"
+  payload_off: "OFF"
+  retain: true
+  qos: 1
+
+buses:
+  onewire: { enabled: false, pin: 4 }
+  i2c:     { enabled: false, controller: 1, sda: 2, scl: 3 }
+  spi:     { enabled: false, controller: 0, sck: 11, mosi: 10, miso: 9, cs: 8 }
+  i2s:     { enabled: false, bclk: 18, lrck: 19, din: 20, dout: 21 }
+
+pwm:
+  enabled: true
+  pins: [12, 13]
+
+mqtt_aliases: {}
+
+pins:
+  - pin: 12
+    alias: fan_pwm
+    direction: pwm_output
+    frequency_hz: 25000
+    initial_duty: 0
+    ha:
+      name: "Fan Speed"
+      min: 0
+      max: 100
+      step: 1
+      unit_of_measurement: "%"
+      icon: mdi:fan
+
+  - pin: 13
+    alias: dimmer_pwm
+    direction: pwm_output
+    frequency_hz: 1000
+    initial_duty: 0
+    ha:
+      name: "Dimmer"
+      min: 0
+      max: 100
+      step: 1
+      unit_of_measurement: "%"
+      icon: mdi:brightness-6
+
+  - pin: 17
+    alias: relay_aux
+    direction: output
+    initial: false
+    ha:
+      name: "Aux Relay"

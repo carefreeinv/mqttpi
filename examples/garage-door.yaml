@@ -1,0 +1,77 @@
+# Garage door — HA switch + binary_sensors with alias table
+#
+#   cp examples/garage-door.yaml config.yaml
+#
+# Entities:
+#   switch.door_trigger
+#   binary_sensor.door_closed
+#   binary_sensor.door_button
+
+device:
+  id: garage-picow
+  board: picow
+  profile: maximum_gpio
+  ha:
+    name: "Garage Door"
+    manufacturer: mqttpi
+    model: picow
+
+mqtt:
+  host: 192.168.1.50
+  port: 1883
+  tls: false
+  base_topic: home/garage
+  client_id: mqttpi-garage-picow
+  homeassistant:
+    discovery: true
+    discovery_prefix: homeassistant
+  payload_on: "ON"
+  payload_off: "OFF"
+  retain: true
+  qos: 1
+
+buses:
+  onewire: { enabled: false, pin: 7 }
+  i2c:     { enabled: false, controller: 0, sda: 0, scl: 1 }
+  spi:     { enabled: false, controller: 0, sck: 2, mosi: 3, miso: 4, cs: 5 }
+  i2s:     { enabled: false, bclk: 16, lrck: 17, din: 18, dout: 19 }
+
+pwm:
+  enabled: false
+  pins: [8, 9, 10, 11, 12, 13, 14, 15]
+
+mqtt_aliases:
+  opener_relay: door_trigger
+  reed_closed: door_closed
+  wall_button: door_button
+
+pins:
+  - pin: 0
+    name: opener_relay
+    alias: door_trigger
+    direction: output
+    initial: false
+    ha:
+      name: "Door Trigger"
+      icon: mdi:garage
+
+  - pin: 1
+    name: reed_closed
+    alias: door_closed
+    direction: input
+    pull: up
+    invert: true
+    debounce_ms: 50
+    ha:
+      name: "Door Closed"
+      device_class: garage_door
+
+  - pin: 2
+    name: wall_button
+    alias: door_button
+    direction: input
+    pull: up
+    debounce_ms: 30
+    ha:
+      name: "Wall Button"
+      device_class: opening

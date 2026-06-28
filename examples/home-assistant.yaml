@@ -1,0 +1,69 @@
+# Home Assistant reference — switch, binary_sensor, inverted contact
+#
+# Canonical HA example showing multiple entity types on one node.
+#   cp examples/home-assistant.yaml config.yaml
+#
+# Requires HA MQTT integration with discovery enabled (default in HA).
+
+device:
+  id: ha-node-01
+  board: picow
+  profile: maximum_gpio
+  ha:
+    name: "HA Reference Node"
+    manufacturer: mqttpi
+    model: picow
+
+mqtt:
+  host: 192.168.1.50
+  port: 1883
+  tls: false
+  base_topic: mqttpi/ha-node-01
+  client_id: mqttpi-ha-node-01
+  homeassistant:
+    discovery: true
+    discovery_prefix: homeassistant
+  payload_on: "ON"
+  payload_off: "OFF"
+  retain: true
+  qos: 1
+
+buses:
+  onewire: { enabled: false, pin: 7 }
+  i2c:     { enabled: false, controller: 0, sda: 0, scl: 1 }
+  spi:     { enabled: false, controller: 0, sck: 2, mosi: 3, miso: 4, cs: 5 }
+  i2s:     { enabled: false, bclk: 16, lrck: 17, din: 18, dout: 19 }
+
+pwm:
+  enabled: false
+  pins: [8, 9, 10, 11, 12, 13, 14, 15]
+
+mqtt_aliases: {}
+
+pins:
+  - pin: 0
+    alias: porch_light
+    direction: output
+    initial: false
+    ha:
+      name: "Porch Light"
+      icon: mdi:lightbulb
+
+  - pin: 1
+    alias: motion_sensor
+    direction: input
+    pull: down
+    debounce_ms: 100
+    ha:
+      name: "Motion Sensor"
+      device_class: motion
+
+  - pin: 2
+    alias: door_contact
+    direction: input
+    pull: up
+    invert: true
+    debounce_ms: 50
+    ha:
+      name: "Door Contact"
+      device_class: door

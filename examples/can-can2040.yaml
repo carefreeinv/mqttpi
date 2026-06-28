@@ -1,0 +1,57 @@
+# CAN — can2040 (PIO) + external transceiver (minimal BOM)
+#
+# No MCP2515 chip: RP2040 PIO bit-bangs CAN protocol (can2040 library).
+# You still need a CAN transceiver (TJA1050, SN65HVD230, MCP2551, etc.)
+# between GPIO and CAN-H/CAN-L.
+#
+# Uses 2 GPIO + 1 PIO block. Pico W WiFi does not block this.
+# Good for RV-C @ 250k or OBD @ 500k. Keep IRQ latency low under load.
+#
+#   cp examples/can-can2040.yaml config.yaml
+
+device:
+  id: can2040-node-01
+  board: picow
+  profile: maximum_gpio
+  ha:
+    name: "CAN2040 Node"
+
+mqtt:
+  host: 192.168.1.50
+  port: 1883
+  tls: false
+  base_topic: mobile/can2040-node-01
+  client_id: mqttpi-can2040-node-01
+  homeassistant:
+    discovery: true
+    discovery_prefix: homeassistant
+  retain: true
+  qos: 1
+
+buses:
+  onewire: { enabled: false, pin: 7 }
+  i2c:     { enabled: false, controller: 0, sda: 0, scl: 1 }
+  spi:     { enabled: false, controller: 0, sck: 2, mosi: 3, miso: 4, cs: 5 }
+  i2s:     { enabled: false, bclk: 16, lrck: 17, din: 18, dout: 19 }
+  can:
+    enabled: true
+    backend: can2040
+    rx: 20
+    tx: 21
+    bitrate: 250000
+    mode: read_write
+    frame_format: extended
+    termination_ohm: 120
+
+pwm:
+  enabled: false
+  pins: [8, 9, 10, 11, 12, 13, 14, 15]
+
+mqtt_aliases: {}
+
+can:
+  rvc:
+    enabled: true
+    source_address: 0x81
+
+pins: []

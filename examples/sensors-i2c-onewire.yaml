@@ -1,0 +1,58 @@
+# I2C + 1-Wire enabled — HA binary_sensor inputs on spare GPIO
+#
+#   cp examples/sensors-i2c-onewire.yaml config.yaml
+#
+# Bus-attached sensors (BME280, DS18B20) will get HA discovery in a later phase.
+# This example maps two contact inputs for HA today.
+
+device:
+  id: sensors-01
+  board: picow
+  profile: sensors
+  ha:
+    name: "Sensor Node"
+
+mqtt:
+  host: 192.168.1.50
+  port: 1883
+  tls: false
+  base_topic: mqttpi/sensors-01
+  client_id: mqttpi-sensors-01
+  homeassistant:
+    discovery: true
+    discovery_prefix: homeassistant
+  payload_on: "ON"
+  payload_off: "OFF"
+  retain: true
+  qos: 1
+
+buses:
+  onewire: { enabled: true, pin: 7 }
+  i2c:     { enabled: true, controller: 0, sda: 0, scl: 1 }
+  spi:     { enabled: false, controller: 0, sck: 2, mosi: 3, miso: 4, cs: 5 }
+  i2s:     { enabled: false, bclk: 16, lrck: 17, din: 18, dout: 19 }
+
+pwm:
+  enabled: false
+  pins: [8, 9, 10, 11, 12, 13, 14, 15]
+
+mqtt_aliases: {}
+
+pins:
+  - pin: 6
+    alias: enclosure_lid
+    direction: input
+    pull: up
+    debounce_ms: 50
+    ha:
+      name: "Enclosure Lid"
+      device_class: opening
+
+  - pin: 20
+    alias: leak_detector
+    direction: input
+    pull: down
+    debounce_ms: 100
+    ha:
+      name: "Leak Detector"
+      device_class: moisture

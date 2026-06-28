@@ -1,0 +1,21 @@
+# Local configuration (never commit)
+secrets.yaml
+config.yaml
+config.local.yaml
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+dist/
+build/
+.venv/
+venv/
+
+# Editor / OS
+.DS_Store
+*.swp
+*~
+.idea/
+.vscode/

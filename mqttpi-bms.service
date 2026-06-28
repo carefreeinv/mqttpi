@@ -1,0 +1,15 @@
+[Unit]
+Description=mqttpi JBD BMS MQTT bridge
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=pi
+WorkingDirectory=/home/pi/mqttpi
+ExecStart=/usr/bin/python3 -m mqttpi.bms.bridge -c /home/pi/mqttpi/config.yaml -s /home/pi/mqttpi/secrets.yaml
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

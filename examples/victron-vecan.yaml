@@ -1,0 +1,106 @@
+# Victron VE.Can — CAN @ 250 kbit/s (NMEA 2000 family, NOT RV-C)
+#
+# VE.Can uses CAN 2.0B extended frames and NMEA 2000 PGNs (plus Victron data).
+# Same physical layer as RV-C (250k, CAN-H/L) but DIFFERENT protocol/PGN map.
+#
+# Products: Lynx Shunt VE.Can, Lynx Smart BMS, SmartSolar MPPT VE.Can, Multi RS.
+# Use Victron VE.Can → NMEA2000 cable or MCP2515/can2040 transceiver tap.
+#
+# Do NOT assume RV-C decoders work on VE.Can — run protocol: vecan separately.
+#
+#   cp examples/victron-vecan.yaml config.yaml
+
+device:
+  id: victron-vecan-01
+  board: picow
+  profile: sensors
+  ha:
+    name: "Victron VE.Can"
+    manufacturer: Victron Energy
+    model: picow-gateway
+
+mqtt:
+  host: 192.168.1.50
+  port: 1883
+  tls: false
+  base_topic: mobile/victron-vecan
+  client_id: mqttpi-victron-vecan-01
+  homeassistant:
+    discovery: true
+    discovery_prefix: homeassistant
+  retain: true
+  qos: 1
+
+buses:
+  onewire: { enabled: false, pin: 7 }
+  i2c:     { enabled: false, controller: 0, sda: 0, scl: 1 }
+  spi:
+    enabled: true
+    controller: 0
+    sck: 2
+    mosi: 3
+    miso: 4
+    cs: 5
+  i2s:     { enabled: false, bclk: 16, lrck: 17, din: 18, dout: 19 }
+  can:
+    enabled: true
+    backend: mcp2515
+    spi_controller: 0
+    cs: 5
+    int: 6
+    oscillator_hz: 16000000
+    bitrate: 250000
+    mode: read
+    frame_format: extended
+    protocol: vecan
+    termination_ohm: 120
+
+pwm:
+  enabled: false
+  pins: [8, 9, 10, 11, 12, 13, 14, 15]
+
+mqtt_aliases: {}
+
+victron:
+  ve_can:
+    publish:
+      retain: true
+    # NMEA 2000 PGNs used by Victron (see VE.Can registers doc)
+    listen:
+      - pgn: 0x1F214
+        alias: dc_voltage
+        instance: 0
+        ha:
+          name: "DC Voltage (VE.Can)"
+          device_class: voltage
+          state_class: measurement
+          unit_of_measurement: "V"
+      - pgn: 0x1F213
+        alias: dc_current
+        instance: 0
+        ha:
+          name: "DC Current (VE.Can)"
+          device_class: current
+          state_class: measurement
+          unit_of_measurement: "A"
+      - pgn: 0x1F211
+        alias: battery_soc
+        instance: 0
+        ha:
+          name: "Battery SOC (VE.Can)"
+          state_class: measurement
+          unit_of_measurement: "%"
+      - pgn: 0x1F219
+        alias: solar_state
+        instance: 0
+        ha:
+          name: "Solar Charger State"
+      - pgn: 0x1F601
+        alias: tank_level
+        instance: 0
+        ha:
+          name: "Tank Level (VE.Can)"
+          state_class: measurement
+          unit_of_measurement: "%"
+
+pins: []

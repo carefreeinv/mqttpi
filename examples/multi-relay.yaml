@@ -1,0 +1,61 @@
+# Multiple relays — four HA switch entities (GP0-GP3)
+#
+#   cp examples/multi-relay.yaml config.yaml
+
+device:
+  id: relay-bank-01
+  board: picow
+  profile: maximum_gpio
+  ha:
+    name: "Relay Bank"
+
+mqtt:
+  host: 192.168.1.50
+  port: 1883
+  tls: false
+  base_topic: mqttpi/relay-bank-01
+  client_id: mqttpi-relay-bank-01
+  homeassistant:
+    discovery: true
+    discovery_prefix: homeassistant
+  payload_on: "ON"
+  payload_off: "OFF"
+  retain: true
+  qos: 1
+
+buses:
+  onewire: { enabled: false, pin: 7 }
+  i2c:     { enabled: false, controller: 0, sda: 0, scl: 1 }
+  spi:     { enabled: false, controller: 0, sck: 2, mosi: 3, miso: 4, cs: 5 }
+  i2s:     { enabled: false, bclk: 16, lrck: 17, din: 18, dout: 19 }
+
+pwm:
+  enabled: false
+  pins: [8, 9, 10, 11, 12, 13, 14, 15]
+
+mqtt_aliases: {}
+
+pins:
+  - pin: 0
+    alias: relay_ch1
+    direction: output
+    initial: false
+    ha: { name: "Relay Channel 1" }
+
+  - pin: 1
+    alias: relay_ch2
+    direction: output
+    initial: false
+    ha: { name: "Relay Channel 2" }
+
+  - pin: 2
+    alias: relay_ch3
+    direction: output
+    initial: false
+    ha: { name: "Relay Channel 3" }
+
+  - pin: 3
+    alias: relay_ch4
+    direction: output
+    initial: false
+    ha: { name: "Relay Channel 4" }

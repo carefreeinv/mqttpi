@@ -1,0 +1,57 @@
+# mqttpi — minimal starter config (Home Assistant compatible by default)
+#
+# Docs: config.example.md  |  Index: ./examples/README.md (each .yaml has a .md)
+#
+# Ready-made setups:
+#   ./examples/          — generic (relay, PWM, HA reference, …)
+#   ./examples/sites/    — location templates (house, rv, semi, camper-top, …)
+#   ./examples/tpms.yaml — tire pressure reference
+#   ./examples/jbd-bms.yaml — JBD BMS UART (Pi only, from bms0)
+#
+#   cp examples/sites/house.yaml config.yaml
+#   cp examples/digital-in-out.yaml config.yaml
+#   cp secrets.example.yaml secrets.yaml
+#
+# HA MQTT discovery is ON by default. Entities auto-appear when the broker
+# receives discovery payloads on homeassistant/*/config topics.
+#
+# Default topic layout (override per pin if needed):
+#   switch:         {base_topic}/gpio/{alias}/state|set
+#   binary_sensor:  {base_topic}/gpio/{alias}/state
+#   sensor (ADC):   {base_topic}/gpio/{alias}/state
+#   number (PWM):   {base_topic}/gpio/{alias}/state|set
+
+device:
+  id: change-me-unique-id
+  board: picow
+  profile: maximum_gpio
+  ha:
+    name: "Change Me Node"
+
+mqtt:
+  host: 192.168.1.50
+  port: 1883
+  tls: false
+  base_topic: mqttpi/change-me-unique-id
+  client_id: mqttpi-change-me-unique-id
+  homeassistant:
+    discovery: true
+    discovery_prefix: homeassistant
+  payload_on: "ON"
+  payload_off: "OFF"
+  retain: true
+  qos: 1
+
+buses:
+  onewire: { enabled: false, pin: 7 }
+  i2c:     { enabled: false, controller: 0, sda: 0, scl: 1 }
+  spi:     { enabled: false, controller: 0, sck: 2, mosi: 3, miso: 4, cs: 5 }
+  i2s:     { enabled: false, bclk: 16, lrck: 17, din: 18, dout: 19 }
+
+pwm:
+  enabled: false
+  pins: [8, 9, 10, 11, 12, 13, 14, 15]
+
+mqtt_aliases: {}
+
+pins: []

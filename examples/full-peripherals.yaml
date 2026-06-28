@@ -1,0 +1,45 @@
+# Full peripherals — minimal HA switch on last free GPIO
+#
+#   cp examples/full-peripherals.yaml config.yaml
+
+device:
+  id: coprocessor-01
+  board: picow
+  profile: full_peripherals
+  ha:
+    name: "I/O Coprocessor"
+
+mqtt:
+  host: 192.168.1.50
+  port: 1883
+  tls: false
+  base_topic: mqttpi/coprocessor-01
+  client_id: mqttpi-coprocessor-01
+  homeassistant:
+    discovery: true
+    discovery_prefix: homeassistant
+  payload_on: "ON"
+  payload_off: "OFF"
+  retain: true
+  qos: 1
+
+buses:
+  onewire: { enabled: true, pin: 7 }
+  i2c:     { enabled: true, controller: 0, sda: 0, scl: 1 }
+  spi:     { enabled: true, controller: 0, sck: 2, mosi: 3, miso: 4, cs: 5 }
+  i2s:     { enabled: true, bclk: 16, lrck: 17, din: 18, dout: 19 }
+
+pwm:
+  enabled: true
+  pins: [8, 9, 10, 11, 12, 13, 14, 15]
+
+mqtt_aliases: {}
+
+pins:
+  - pin: 6
+    alias: status_led
+    direction: output
+    initial: false
+    ha:
+      name: "Status LED"
+      icon: mdi:led-outline

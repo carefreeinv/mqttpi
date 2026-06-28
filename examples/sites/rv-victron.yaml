@@ -1,0 +1,131 @@
+# Site: RV with Victron solar + shunt (VE.Direct) AND optional RV-C house bus
+#
+# Typical high-end RV:
+#   • Victron SmartShunt + MPPT on VE.Direct (UART) — solar/battery to HA
+#   • RV-C CAN for house lights/HVAC (separate bus, read/write)
+#   • GPIO for door, propane, accent relays not on RV-C
+#
+# Victron ≠ RV-C. Cerbo GX bridges both; mqttpi can do the same with two buses.
+#
+#   cp examples/sites/rv-victron.yaml config.yaml
+
+device:
+  id: rv-victron-01
+  board: picow
+  profile: sensors
+  ha:
+    name: "RV Power & Coach"
+    manufacturer: mqttpi
+
+mqtt:
+  host: 192.168.1.50
+  port: 1883
+  tls: false
+  base_topic: mobile/rv-victron
+  client_id: mqttpi-rv-victron-01
+  homeassistant:
+    discovery: true
+    discovery_prefix: homeassistant
+  payload_on: "ON"
+  payload_off: "OFF"
+  retain: true
+  qos: 1
+
+buses:
+  onewire: { enabled: false, pin: 7 }
+  i2c:
+    enabled: true
+    controller: 0
+    sda: 0
+    scl: 1
+  spi:
+    enabled: true
+    controller: 0
+    sck: 2
+    mosi: 3
+    miso: 4
+    cs: 5
+  i2s:     { enabled: false, bclk: 16, lrck: 17, din: 18, dout: 19 }
+  can:
+    enabled: true
+    backend: mcp2515
+    spi_controller: 0
+    cs: 5
+    int: 6
+    oscillator_hz: 16000000
+    bitrate: 250000
+    mode: read_write
+    frame_format: extended
+    protocol: rvc
+    rvc:
+      enabled: true
+      source_address: 0x82
+  ve_direct:
+    enabled: true
+    uart: 1
+    tx: 8
+    rx: 9
+    baud: 19200
+    devices:
+      - id: shunt_house
+        alias: victron_shunt
+        ha: { name: "Victron House Shunt" }
+      # Second VE.Direct device needs another UART or USB hub on Pi
+
+pwm:
+  enabled: false
+  pins: [8, 9, 10, 11, 12, 13, 14, 15]
+
+mqtt_aliases: {}
+
+sensors:
+  level:
+    enabled: true
+    bus: i2c
+    chip: mpu6050
+    address: 0x68
+    mount: floor_plane
+    calibration:
+      mode: on_boot
+      command_topic: "{base_topic}/level/calibrate"
+    publish: { interval_ms: 2000, retain: true }
+    readings:
+      pitch:  { alias: level_pitch, ha: { name: "Pitch", unit_of_measurement: "°" } }
+      roll:   { alias: level_roll,  ha: { name: "Roll",  unit_of_measurement: "°" } }
+      is_level: { alias: is_level, type: binary, threshold_deg: 1.5, ha: { name: "Level OK" } }
+
+victron:
+  ve_direct:
+    device: victron_shunt
+    fields:
+      - { key: V,   alias: battery_voltage, ha: { name: "House Voltage", device_class: voltage, unit_of_measurement: "V" } }
+      - { key: I,   alias: battery_current, ha: { name: "House Current", device_class: current, unit_of_measurement: "A" } }
+      - { key: SOC, alias: battery_soc,     ha: { name: "House SOC", unit_of_measurement: "%" } }
+
+can:
+  rvc:
+    listen:
+      - { pgn: 0x1FFB9, alias: fresh_tank_rvc, instance: 0, ha: { name: "Fresh Tank (RVC)", unit_of_measurement: "%" } }
+    command:
+      - { pgn: 0x1FFD8, alias: ceiling_light_rvc, instance: 0, type: dimmer, ha: { name: "Ceiling Light (RVC)" } }
+
+pins:
+  - pin: 10
+    alias: entry_door
+    direction: input
+    pull: up
+    invert: true
+    debounce_ms: 50
+    ha: { name: "Entry Door", device_class: door }
+
+  - pin: 11
+    alias: porch_light
+    direction: output
+    initial: false
+    ha: { name: "Porch Light (GPIO)" }
+
+  - pin: 14
+    alias: propane_alarm
+    direction: input
+    pull: down
+    ha: { name: "Propane Alarm", device_class: gas }

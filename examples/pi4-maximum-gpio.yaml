@@ -1,0 +1,55 @@
+# Raspberry Pi 4/5 — HA switch + binary_sensor
+#
+#   cp examples/pi4-maximum-gpio.yaml config.yaml
+#
+# GPIO 14/15 are serial console — not used here.
+
+device:
+  id: pi4-node-01
+  board: pi4
+  profile: maximum_gpio
+  ha:
+    name: "Pi 4 Node"
+
+mqtt:
+  host: 192.168.1.50
+  port: 1883
+  tls: false
+  base_topic: mqttpi/pi4-node-01
+  client_id: mqttpi-pi4-node-01
+  homeassistant:
+    discovery: true
+    discovery_prefix: homeassistant
+  payload_on: "ON"
+  payload_off: "OFF"
+  retain: true
+  qos: 1
+
+buses:
+  onewire: { enabled: false, pin: 4 }
+  i2c:     { enabled: false, controller: 1, sda: 2, scl: 3 }
+  spi:     { enabled: false, controller: 0, sck: 11, mosi: 10, miso: 9, cs: 8 }
+  i2s:     { enabled: false, bclk: 18, lrck: 19, din: 20, dout: 21 }
+
+pwm:
+  enabled: false
+  pins: [12, 13]
+
+mqtt_aliases: {}
+
+pins:
+  - pin: 17
+    alias: relay_main
+    direction: output
+    initial: false
+    ha:
+      name: "Relay Main"
+
+  - pin: 27
+    alias: button_main
+    direction: input
+    pull: up
+    debounce_ms: 50
+    ha:
+      name: "Button Main"
+      device_class: opening

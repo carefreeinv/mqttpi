@@ -1,0 +1,235 @@
+# Site: Motorhome — multi-zone HVAC, bay doors, gen/shore, engine, level sensor
+#
+# Larger than RV: basement bays, dual HVAC zones, generator interlock.
+# I2C MPU6050 for pitch/roll — mount flat in center aisle or battery bay.
+#
+#   cp examples/sites/motorhome.yaml config.yaml
+
+device:
+  id: motorhome-main
+  board: picow
+  profile: sensors
+  ha:
+    name: "Motorhome"
+    manufacturer: mqttpi
+    model: picow
+
+mqtt:
+  host: 192.168.1.50
+  port: 1883
+  tls: false
+  base_topic: mobile/motorhome
+  client_id: mqttpi-motorhome-main
+  homeassistant:
+    discovery: true
+    discovery_prefix: homeassistant
+  payload_on: "ON"
+  payload_off: "OFF"
+  retain: true
+  qos: 1
+
+buses:
+  onewire: { enabled: true, pin: 7 }
+  i2c:     { enabled: true, controller: 0, sda: 0, scl: 1 }
+  spi:     { enabled: false, controller: 0, sck: 2, mosi: 3, miso: 4, cs: 5 }
+  i2s:     { enabled: false, bclk: 16, lrck: 17, din: 18, dout: 19 }
+
+pwm:
+  enabled: true
+  pins: [8, 9, 10, 11, 12, 13, 14, 15]
+
+mqtt_aliases:
+  shore_power_detect: shore_connected
+  gen_running_sense: generator_running
+
+sensors:
+  level:
+    enabled: true
+    bus: i2c
+    chip: mpu6050
+    address: 0x68
+    mount: floor_plane
+    calibration:
+      mode: on_boot
+      command_topic: "{base_topic}/level/calibrate"
+    publish:
+      interval_ms: 2000
+      retain: true
+    readings:
+      pitch:
+        alias: level_pitch
+        ha:
+          name: "Level Pitch"
+          state_class: measurement
+          unit_of_measurement: "°"
+          icon: mdi:angle-acute
+      roll:
+        alias: level_roll
+        ha:
+          name: "Level Roll"
+          state_class: measurement
+          unit_of_measurement: "°"
+          icon: mdi:angle-acute
+      deviation:
+        alias: level_deviation
+        type: max_abs
+        ha:
+          name: "Level Deviation"
+          state_class: measurement
+          unit_of_measurement: "°"
+          icon: mdi:spirit-level
+      is_level:
+        alias: is_level
+        type: binary
+        threshold_deg: 1.0
+        ha:
+          name: "Level OK"
+          icon: mdi:check-circle
+
+  # TPMS via I2C bridge (shares bus with level sensor; frees UART/PWM pins)
+  tpms:
+    enabled: true
+    receiver:
+      type: i2c
+      chip: tpms_bridge
+      address: 0x55
+    protocol: tpms433
+    pair_topic: "{base_topic}/tpms/pair"
+    publish:
+      retain: true
+    units:
+      pressure: psi
+      temperature: f
+    wheels:
+      - sensor_id: "REPLACE_STEER_FL"
+        position: steer_fl
+        alias: tpms_steer_fl
+        thresholds: { low_psi: 80, high_psi: 120 }
+        ha: { name: "Steer FL" }
+      - sensor_id: "REPLACE_STEER_FR"
+        position: steer_fr
+        alias: tpms_steer_fr
+        thresholds: { low_psi: 80, high_psi: 120 }
+        ha: { name: "Steer FR" }
+      - sensor_id: "REPLACE_DRIVE_RLO"
+        position: drive_rlo
+        alias: tpms_drive_rlo
+        thresholds: { low_psi: 80, high_psi: 120 }
+        ha: { name: "Drive Outer L" }
+      - sensor_id: "REPLACE_DRIVE_RLI"
+        position: drive_rli
+        alias: tpms_drive_rli
+        thresholds: { low_psi: 80, high_psi: 120 }
+        ha: { name: "Drive Inner L" }
+      - sensor_id: "REPLACE_DRIVE_RRI"
+        position: drive_rri
+        alias: tpms_drive_rri
+        thresholds: { low_psi: 80, high_psi: 120 }
+        ha: { name: "Drive Inner R" }
+      - sensor_id: "REPLACE_DRIVE_RRO"
+        position: drive_rro
+        alias: tpms_drive_rro
+        thresholds: { low_psi: 80, high_psi: 120 }
+        ha: { name: "Drive Outer R" }
+
+pins:
+  # GP0/1 = I2C; GP7 = 1-Wire; GP8-15 = PWM bank
+  - pin: 16
+    alias: entry_door
+    direction: input
+    pull: up
+    invert: true
+    debounce_ms: 50
+    ha: { name: "Entry Door", device_class: door }
+
+  - pin: 2
+    alias: engine_running
+    direction: input
+    pull: down
+    debounce_ms: 500
+    ha: { name: "Engine Running", device_class: running }
+
+  - pin: 3
+    alias: shore_connected
+    direction: input
+    pull: down
+    debounce_ms: 200
+    ha: { name: "Shore Power", device_class: power }
+
+  - pin: 4
+    alias: generator_running
+    direction: input
+    pull: down
+    debounce_ms: 500
+    ha: { name: "Generator Running", device_class: running }
+
+  - pin: 6
+    alias: bay_driver
+    direction: input
+    pull: up
+    invert: true
+    debounce_ms: 50
+    ha: { name: "Driver Bay Door", device_class: opening }
+
+  - pin: 20
+    alias: bay_passenger
+    direction: input
+    pull: up
+    invert: true
+    debounce_ms: 50
+    ha: { name: "Passenger Bay Door", device_class: opening }
+
+  - pin: 21
+    alias: interior_main
+    direction: output
+    initial: false
+    ha: { name: "Interior Main", icon: mdi:lightbulb-group }
+
+  - pin: 22
+    alias: accent_living
+    direction: output
+    initial: false
+    ha: { name: "Living Accent", icon: mdi:sofa }
+
+  - pin: 17
+    alias: accent_bedroom
+    direction: output
+    initial: false
+    ha: { name: "Bedroom Accent", icon: mdi:bed }
+
+  - pin: 18
+    alias: patio_light
+    direction: output
+    initial: false
+    ha: { name: "Patio Light", icon: mdi:coach-lamp }
+
+  - pin: 19
+    alias: hvac_front_fan
+    direction: output
+    initial: false
+    ha: { name: "Front HVAC Fan", icon: mdi:fan }
+
+  - pin: 26
+    alias: hvac_front_cool
+    direction: output
+    initial: false
+    ha: { name: "Front HVAC Cool", icon: mdi:snowflake }
+
+  - pin: 27
+    alias: hvac_rear_fan
+    direction: output
+    initial: false
+    ha: { name: "Rear HVAC Fan", icon: mdi:fan }
+
+  - pin: 28
+    alias: hvac_rear_heat
+    direction: output
+    initial: false
+    ha: { name: "Rear HVAC Heat", icon: mdi:fire }
+
+  - pin: 8
+    alias: living_dim
+    direction: pwm_output
+    frequency_hz: 1000
+    initial_duty: 0
+    ha: { name: "Living Dimmer", min: 0, max: 100, unit_of_measurement: "%" }

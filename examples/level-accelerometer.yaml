@@ -1,0 +1,90 @@
+# I2C accelerometer level sensor — standalone reference (HA)
+#
+# Pitch, roll, combined deviation, and binary "level OK" for RV/trailer/skoolie.
+# Pair with any site config or use alone on a dedicated leveling node.
+#
+# Hardware: MPU6050 (default 0x68) or ADXL345 (0x53) on I2C0 GP0/GP1 (Pico W)
+# Mount chip flat on floor plane; calibrate on level pavement at boot.
+#
+#   cp examples/level-accelerometer.yaml config.yaml
+
+device:
+  id: level-node-01
+  board: picow
+  profile: sensors
+  ha:
+    name: "Vehicle Level"
+    manufacturer: mqttpi
+    model: picow
+
+mqtt:
+  host: 192.168.1.50
+  port: 1883
+  tls: false
+  base_topic: mobile/level-node-01
+  client_id: mqttpi-level-node-01
+  homeassistant:
+    discovery: true
+    discovery_prefix: homeassistant
+  retain: true
+  qos: 1
+
+buses:
+  onewire: { enabled: false, pin: 7 }
+  i2c:     { enabled: true, controller: 0, sda: 0, scl: 1 }
+  spi:     { enabled: false, controller: 0, sck: 2, mosi: 3, miso: 4, cs: 5 }
+  i2s:     { enabled: false, bclk: 16, lrck: 17, din: 18, dout: 19 }
+
+pwm:
+  enabled: false
+  pins: [8, 9, 10, 11, 12, 13, 14, 15]
+
+mqtt_aliases: {}
+
+sensors:
+  level:
+    enabled: true
+    bus: i2c
+    chip: mpu6050
+    address: 0x68
+    mount: floor_plane
+    calibration:
+      mode: on_boot
+      command_topic: "{base_topic}/level/calibrate"
+    publish:
+      interval_ms: 2000
+      retain: true
+    readings:
+      pitch:
+        alias: level_pitch
+        ha:
+          name: "Level Pitch"
+          state_class: measurement
+          unit_of_measurement: "°"
+          icon: mdi:angle-acute
+      roll:
+        alias: level_roll
+        ha:
+          name: "Level Roll"
+          state_class: measurement
+          unit_of_measurement: "°"
+          icon: mdi:angle-acute
+      deviation:
+        alias: level_deviation
+        type: max_abs
+        ha:
+          name: "Level Deviation"
+          state_class: measurement
+          unit_of_measurement: "°"
+          icon: mdi:spirit-level
+      is_level:
+        alias: is_level
+        type: binary
+        threshold_deg: 1.5
+        ha:
+          name: "Level OK"
+          icon: mdi:check-circle
+          payload_on: "ON"
+          payload_off: "OFF"
+
+pins: []

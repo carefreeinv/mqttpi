@@ -1,0 +1,95 @@
+# TPMS — tire pressure / temperature reference (HA)
+#
+# Supports 433 MHz TPMS via UART decoder or I2C aggregation bridge.
+# Each wheel exposes HA sensor (pressure), sensor (temp), binary_sensor (low).
+#
+# Pairing: publish hex sensor_id to {base_topic}/tpms/pair
+#
+#   cp examples/tpms.yaml config.yaml
+
+device:
+  id: tpms-node-01
+  board: picow
+  profile: sensors
+  ha:
+    name: "TPMS Node"
+    manufacturer: mqttpi
+    model: picow
+
+mqtt:
+  host: 192.168.1.50
+  port: 1883
+  tls: false
+  base_topic: mobile/tpms-node-01
+  client_id: mqttpi-tpms-node-01
+  homeassistant:
+    discovery: true
+    discovery_prefix: homeassistant
+  retain: true
+  qos: 1
+
+buses:
+  onewire: { enabled: false, pin: 7 }
+  i2c:     { enabled: true, controller: 0, sda: 0, scl: 1 }
+  spi:     { enabled: false, controller: 0, sck: 2, mosi: 3, miso: 4, cs: 5 }
+  i2s:     { enabled: false, bclk: 16, lrck: 17, din: 18, dout: 19 }
+
+pwm:
+  enabled: false
+  pins: [8, 9, 10, 11, 12, 13, 14, 15]
+
+mqtt_aliases: {}
+
+sensors:
+  tpms:
+    enabled: true
+    receiver:
+      type: uart
+      controller: 1
+      tx: 8
+      rx: 9
+      baud: 115200
+    protocol: tpms433
+    pair_topic: "{base_topic}/tpms/pair"
+    publish:
+      retain: true
+    units:
+      pressure: psi
+      temperature: f
+    readings_per_wheel:
+      pressure:
+        ha:
+          device_class: pressure
+          state_class: measurement
+      temperature:
+        ha:
+          device_class: temperature
+          state_class: measurement
+      low_pressure:
+        type: binary
+        ha:
+          device_class: problem
+          icon: mdi:car-tire-alert
+    wheels:
+      - sensor_id: "REPLACE_FL"
+        position: fl
+        alias: tpms_fl
+        thresholds: { low_psi: 32, high_psi: 80 }
+        ha: { name: "Tire FL" }
+      - sensor_id: "REPLACE_FR"
+        position: fr
+        alias: tpms_fr
+        thresholds: { low_psi: 32, high_psi: 80 }
+        ha: { name: "Tire FR" }
+      - sensor_id: "REPLACE_RL"
+        position: rl
+        alias: tpms_rl
+        thresholds: { low_psi: 32, high_psi: 80 }
+        ha: { name: "Tire RL" }
+      - sensor_id: "REPLACE_RR"
+        position: rr
+        alias: tpms_rr
+        thresholds: { low_psi: 32, high_psi: 80 }
+        ha: { name: "Tire RR" }
+
+pins: []

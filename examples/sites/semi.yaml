@@ -1,0 +1,277 @@
+# Site: Semi — tractor + trailer TPMS, air, fifth wheel, sleeper HVAC
+#
+# Pi 4 recommended: many TPMS wheels, UART TPMS receiver, I2S alert SFX.
+# 18-wheel layout: 10 tractor + 8 trailer (dual axles).
+#
+#   cp examples/sites/semi.yaml config.yaml
+#
+# Pair sensors: publish sensor_id to {base_topic}/tpms/pair while airing up.
+
+device:
+  id: semi-tractor-01
+  board: pi4
+  profile: sensors
+  ha:
+    name: "Semi Tractor"
+    manufacturer: mqttpi
+    model: pi4
+
+mqtt:
+  host: 192.168.1.50
+  port: 1883
+  tls: false
+  base_topic: fleet/semi-01
+  client_id: mqttpi-semi-tractor-01
+  homeassistant:
+    discovery: true
+    discovery_prefix: homeassistant
+  payload_on: "ON"
+  payload_off: "OFF"
+  retain: true
+  qos: 1
+
+buses:
+  onewire: { enabled: true, pin: 4 }
+  i2c:     { enabled: true, controller: 1, sda: 2, scl: 3 }
+  spi:     { enabled: false, controller: 0, sck: 11, mosi: 10, miso: 9, cs: 8 }
+  i2s:
+    enabled: true
+    bclk: 18
+    lrck: 19
+    din: 20
+    dout: 21
+    sfx:
+      enabled: true
+      directory: /opt/mqttpi/sfx/semi
+      command_topic: "{base_topic}/sfx/play"
+      play_by_number: true
+      tracks:
+        - number: 1
+          alias: tpms_low_alert
+          file: "01-tpms-low.wav"
+          ha: { name: "SFX TPMS Low", icon: mdi:car-tire-alert }
+        - number: 2
+          alias: air_low_alert
+          file: "02-air-low.wav"
+          ha: { name: "SFX Air Low", icon: mdi:air-compressor }
+        - number: 3
+          alias: trailer_disconnect
+          file: "03-trailer-disc.wav"
+          ha: { name: "SFX Trailer Disconnect", icon: mdi:truck-trailer }
+
+pwm:
+  enabled: false
+  pins: [12, 13]
+
+mqtt_aliases:
+  fifth_wheel_locked: fifth_wheel
+  trailer_air_connected: trailer_air
+
+sensors:
+  level:
+    enabled: true
+    bus: i2c
+    chip: mpu6050
+    address: 0x68
+    mount: sleeper_floor
+    calibration:
+      mode: on_boot
+      command_topic: "{base_topic}/level/calibrate"
+    publish:
+      interval_ms: 5000
+      retain: true
+    readings:
+      pitch:
+        alias: sleeper_pitch
+        ha:
+          name: "Sleeper Pitch"
+          state_class: measurement
+          unit_of_measurement: "°"
+      roll:
+        alias: sleeper_roll
+        ha:
+          name: "Sleeper Roll"
+          state_class: measurement
+          unit_of_measurement: "°"
+      is_level:
+        alias: sleeper_level_ok
+        type: binary
+        threshold_deg: 1.0
+        ha: { name: "Sleeper Level OK", icon: mdi:check-circle }
+
+  tpms:
+    enabled: true
+    receiver:
+      type: uart
+      controller: 0
+      tx: 14
+      rx: 15
+      baud: 115200
+    protocol: tpms433
+    pair_topic: "{base_topic}/tpms/pair"
+    publish:
+      retain: true
+    units:
+      pressure: psi
+      temperature: f
+    alerts:
+      low_pressure_sfx: 1
+      publish_topic: "{base_topic}/tpms/alerts"
+    wheels:
+      # --- Tractor steer axle ---
+      - sensor_id: "REPLACE_T_STEER_FL"
+        position: tractor_steer_fl
+        alias: tpms_t_steer_fl
+        thresholds: { low_psi: 95, high_psi: 130 }
+        ha: { name: "Tractor Steer FL" }
+      - sensor_id: "REPLACE_T_STEER_FR"
+        position: tractor_steer_fr
+        alias: tpms_t_steer_fr
+        thresholds: { low_psi: 95, high_psi: 130 }
+        ha: { name: "Tractor Steer FR" }
+      # --- Tractor drive axle 1 (dual) ---
+      - sensor_id: "REPLACE_T_DRV1_LO"
+        position: tractor_drive1_lo
+        alias: tpms_t_drv1_lo
+        thresholds: { low_psi: 95, high_psi: 130 }
+        ha: { name: "Tractor Drive1 Outer L" }
+      - sensor_id: "REPLACE_T_DRV1_LI"
+        position: tractor_drive1_li
+        alias: tpms_t_drv1_li
+        thresholds: { low_psi: 95, high_psi: 130 }
+        ha: { name: "Tractor Drive1 Inner L" }
+      - sensor_id: "REPLACE_T_DRV1_RI"
+        position: tractor_drive1_ri
+        alias: tpms_t_drv1_ri
+        thresholds: { low_psi: 95, high_psi: 130 }
+        ha: { name: "Tractor Drive1 Inner R" }
+      - sensor_id: "REPLACE_T_DRV1_RO"
+        position: tractor_drive1_ro
+        alias: tpms_t_drv1_ro
+        thresholds: { low_psi: 95, high_psi: 130 }
+        ha: { name: "Tractor Drive1 Outer R" }
+      # --- Tractor drive axle 2 (dual) ---
+      - sensor_id: "REPLACE_T_DRV2_LO"
+        position: tractor_drive2_lo
+        alias: tpms_t_drv2_lo
+        thresholds: { low_psi: 95, high_psi: 130 }
+        ha: { name: "Tractor Drive2 Outer L" }
+      - sensor_id: "REPLACE_T_DRV2_LI"
+        position: tractor_drive2_li
+        alias: tpms_t_drv2_li
+        thresholds: { low_psi: 95, high_psi: 130 }
+        ha: { name: "Tractor Drive2 Inner L" }
+      - sensor_id: "REPLACE_T_DRV2_RI"
+        position: tractor_drive2_ri
+        alias: tpms_t_drv2_ri
+        thresholds: { low_psi: 95, high_psi: 130 }
+        ha: { name: "Tractor Drive2 Inner R" }
+      - sensor_id: "REPLACE_T_DRV2_RO"
+        position: tractor_drive2_ro
+        alias: tpms_t_drv2_ro
+        thresholds: { low_psi: 95, high_psi: 130 }
+        ha: { name: "Tractor Drive2 Outer R" }
+      # --- Trailer axle 1 (dual) ---
+      - sensor_id: "REPLACE_TR_A1_LO"
+        position: trailer_axle1_lo
+        alias: tpms_tr_a1_lo
+        thresholds: { low_psi: 90, high_psi: 125 }
+        ha: { name: "Trailer Axle1 Outer L" }
+      - sensor_id: "REPLACE_TR_A1_LI"
+        position: trailer_axle1_li
+        alias: tpms_tr_a1_li
+        thresholds: { low_psi: 90, high_psi: 125 }
+        ha: { name: "Trailer Axle1 Inner L" }
+      - sensor_id: "REPLACE_TR_A1_RI"
+        position: trailer_axle1_ri
+        alias: tpms_tr_a1_ri
+        thresholds: { low_psi: 90, high_psi: 125 }
+        ha: { name: "Trailer Axle1 Inner R" }
+      - sensor_id: "REPLACE_TR_A1_RO"
+        position: trailer_axle1_ro
+        alias: tpms_tr_a1_ro
+        thresholds: { low_psi: 90, high_psi: 125 }
+        ha: { name: "Trailer Axle1 Outer R" }
+      # --- Trailer axle 2 (dual) ---
+      - sensor_id: "REPLACE_TR_A2_LO"
+        position: trailer_axle2_lo
+        alias: tpms_tr_a2_lo
+        thresholds: { low_psi: 90, high_psi: 125 }
+        ha: { name: "Trailer Axle2 Outer L" }
+      - sensor_id: "REPLACE_TR_A2_LI"
+        position: trailer_axle2_li
+        alias: tpms_tr_a2_li
+        thresholds: { low_psi: 90, high_psi: 125 }
+        ha: { name: "Trailer Axle2 Inner L" }
+      - sensor_id: "REPLACE_TR_A2_RI"
+        position: trailer_axle2_ri
+        alias: tpms_tr_a2_ri
+        thresholds: { low_psi: 90, high_psi: 125 }
+        ha: { name: "Trailer Axle2 Inner R" }
+      - sensor_id: "REPLACE_TR_A2_RO"
+        position: trailer_axle2_ro
+        alias: tpms_tr_a2_ro
+        thresholds: { low_psi: 90, high_psi: 125 }
+        ha: { name: "Trailer Axle2 Outer R" }
+
+pins:
+  - pin: 5
+    alias: engine_running
+    direction: input
+    pull: down
+    debounce_ms: 500
+    ha: { name: "Engine Running", device_class: running }
+
+  - pin: 6
+    alias: fifth_wheel
+    direction: input
+    pull: up
+    debounce_ms: 100
+    ha: { name: "Fifth Wheel Locked", device_class: lock }
+
+  - pin: 16
+    alias: trailer_air
+    direction: input
+    pull: down
+    debounce_ms: 50
+    ha: { name: "Trailer Air Connected", device_class: connectivity }
+
+  - pin: 17
+    alias: trailer_connected
+    direction: input
+    pull: down
+    debounce_ms: 50
+    ha: { name: "Trailer Connected", device_class: connectivity }
+
+  - pin: 22
+    alias: abs_fault
+    direction: input
+    pull: up
+    invert: true
+    debounce_ms: 200
+    ha: { name: "ABS Fault", device_class: problem }
+
+  - pin: 23
+    alias: marker_lights
+    direction: output
+    initial: false
+    ha: { name: "Marker Lights", icon: mdi:truck-flatbed }
+
+  - pin: 24
+    alias: sleeper_hvac
+    direction: output
+    initial: false
+    ha: { name: "Sleeper HVAC", icon: mdi:air-conditioner }
+
+  - pin: 25
+    alias: cab_accent
+    direction: output
+    initial: false
+    ha: { name: "Cab Accent", icon: mdi:led-strip }
+
+  - pin: 27
+    alias: air_system_low
+    direction: input
+    pull: down
+    debounce_ms: 500
+    ha: { name: "Air System Low", device_class: problem }

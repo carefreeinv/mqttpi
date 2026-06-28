@@ -1,0 +1,137 @@
+# Mobile robot — differential drive, bumpers, PWM motors, optional I2C ranging
+#
+# Pico W on a small rover: two PWM motor channels, direction GPIO, bumpers,
+# e-stop, status LED. Ultrasonic or ToF on I2C (GP0/GP1) when enabled.
+#
+# Motor driver: typical L298N / TB6612 — PWM = speed, DIR pins = direction.
+# Do not drive motors directly from Pico pins.
+#
+#   cp examples/robot.yaml config.yaml
+
+device:
+  id: robot-01
+  board: picow
+  profile: pwm_only
+  ha:
+    name: "MQTT Robot"
+    manufacturer: mqttpi
+    model: picow-rover
+
+mqtt:
+  host: 192.168.1.50
+  port: 1883
+  tls: false
+  base_topic: mqttpi/robot-01
+  client_id: mqttpi-robot-01
+  homeassistant:
+    discovery: true
+    discovery_prefix: homeassistant
+  payload_on: "ON"
+  payload_off: "OFF"
+  retain: true
+  qos: 1
+
+buses:
+  onewire: { enabled: false, pin: 7 }
+  i2c:
+    enabled: true
+    controller: 0
+    sda: 0
+    scl: 1
+  spi:     { enabled: false, controller: 0, sck: 2, mosi: 3, miso: 4, cs: 5 }
+  i2s:     { enabled: false, bclk: 16, lrck: 17, din: 18, dout: 19 }
+
+pwm:
+  enabled: true
+  pins: [8, 9, 10, 11, 12, 13, 14, 15]
+
+mqtt_aliases: {}
+
+sensors:
+  range:
+    enabled: true
+    bus: i2c
+    chip: vl53l0x
+    address: 0x29
+    publish:
+      interval_ms: 200
+      retain: false
+    readings:
+      distance_mm:
+        alias: front_range_mm
+        ha:
+          name: "Front Range"
+          device_class: distance
+          state_class: measurement
+          unit_of_measurement: "mm"
+
+pins:
+  - pin: 8
+    alias: motor_left_pwm
+    direction: pwm_output
+    frequency_hz: 20000
+    initial_duty: 0
+    ha:
+      name: "Left Motor Speed"
+      min: 0
+      max: 100
+      step: 1
+      unit_of_measurement: "%"
+
+  - pin: 9
+    alias: motor_right_pwm
+    direction: pwm_output
+    frequency_hz: 20000
+    initial_duty: 0
+    ha:
+      name: "Right Motor Speed"
+      min: 0
+      max: 100
+      step: 1
+      unit_of_measurement: "%"
+
+  - pin: 2
+    alias: motor_left_dir
+    direction: output
+    initial: false
+    ha: { name: "Left Motor Forward", icon: mdi:arrow-left-bold }
+
+  - pin: 3
+    alias: motor_right_dir
+    direction: output
+    initial: false
+    ha: { name: "Right Motor Forward", icon: mdi:arrow-right-bold }
+
+  - pin: 4
+    alias: bumper_front
+    direction: input
+    pull: up
+    debounce_ms: 30
+    ha: { name: "Front Bumper", device_class: safety }
+
+  - pin: 5
+    alias: bumper_rear
+    direction: input
+    pull: up
+    debounce_ms: 30
+    ha: { name: "Rear Bumper", device_class: safety }
+
+  - pin: 6
+    alias: estop
+    direction: input
+    pull: up
+    invert: true
+    debounce_ms: 10
+    ha: { name: "Emergency Stop", device_class: safety }
+
+  - pin: 10
+    alias: status_led
+    direction: output
+    initial: false
+    ha: { name: "Status LED", icon: mdi:led-outline }
+
+  - pin: 11
+    alias: enable_drivers
+    direction: output
+    initial: false
+    ha: { name: "Motor Drivers Enable", icon: mdi:engine }

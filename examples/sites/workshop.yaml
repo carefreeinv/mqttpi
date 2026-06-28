@@ -1,0 +1,101 @@
+# Site: Workshop — tools, dust collection, machine interlocks
+#
+# Pico W node: bay door, motion, machine power relays, work lights.
+# I2C reserved for future current-monitor / environmental sensor.
+#
+#   cp examples/sites/workshop.yaml config.yaml
+
+device:
+  id: workshop-main
+  board: picow
+  profile: sensors
+  ha:
+    name: "Workshop"
+    manufacturer: mqttpi
+    model: picow
+
+mqtt:
+  host: 192.168.1.50
+  port: 1883
+  tls: false
+  base_topic: site/workshop
+  client_id: mqttpi-workshop-main
+  homeassistant:
+    discovery: true
+    discovery_prefix: homeassistant
+  payload_on: "ON"
+  payload_off: "OFF"
+  retain: true
+  qos: 1
+
+buses:
+  onewire: { enabled: false, pin: 7 }
+  i2c:     { enabled: true, controller: 0, sda: 0, scl: 1 }
+  spi:     { enabled: false, controller: 0, sck: 2, mosi: 3, miso: 4, cs: 5 }
+  i2s:     { enabled: false, bclk: 16, lrck: 17, din: 18, dout: 19 }
+
+pwm:
+  enabled: true
+  pins: [8, 9, 10, 11, 12, 13, 14, 15]
+
+mqtt_aliases:
+  overhead_bank: shop_overhead
+  bench_strip: bench_lights
+
+pins:
+  - pin: 6
+    alias: bay_door
+    direction: input
+    pull: up
+    invert: true
+    debounce_ms: 50
+    ha: { name: "Bay Door", device_class: garage_door }
+
+  - pin: 20
+    alias: motion_shop
+    direction: input
+    pull: down
+    debounce_ms: 200
+    ha: { name: "Shop Motion", device_class: motion }
+
+  - pin: 21
+    alias: dust_collector
+    direction: output
+    initial: false
+    ha: { name: "Dust Collector", icon: mdi:fan }
+
+  - pin: 22
+    alias: table_saw_power
+    direction: output
+    initial: false
+    ha: { name: "Table Saw Outlet", icon: mdi:saw-blade }
+
+  - pin: 2
+    alias: shop_overhead
+    direction: output
+    initial: false
+    ha: { name: "Overhead Lights", icon: mdi:ceiling-light }
+
+  - pin: 3
+    alias: bench_lights
+    direction: output
+    initial: false
+    ha: { name: "Bench Accent", icon: mdi:desk-lamp }
+
+  - pin: 8
+    alias: overhead_dim
+    direction: pwm_output
+    frequency_hz: 1000
+    initial_duty: 0
+    ha: { name: "Overhead Dimmer", min: 0, max: 100, unit_of_measurement: "%" }
+
+  - pin: 26
+    alias: shop_temp
+    direction: analog_input
+    publish: { interval_ms: 60000 }
+    ha:
+      name: "Shop Temperature Probe"
+      device_class: temperature
+      state_class: measurement
+      unit_of_measurement: "°C"
+      scale: { min: -40.0, max: 85.0 }

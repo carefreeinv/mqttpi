@@ -1,0 +1,101 @@
+# Victron VE.Direct — UART wired protocol (NOT CAN, NOT RV-C)
+#
+# Point-to-point serial @ 19200 8N1. One VE.Direct port per device.
+# Common devices: SmartShunt, BMV-712, SmartSolar MPPT (VE.Direct models),
+# Phoenix Inverter (VE.Direct), BatteryProtect.
+#
+# Pico W: UART1 on GP4 (TX) / GP5 (RX) — or USB-serial adapter on Pi 4.
+# VE.Direct cable is RJ45; use Victron VE.Direct USB cable or TTL adapter.
+#
+#   cp examples/victron-vedirect.yaml config.yaml
+
+device:
+  id: victron-vedirect-01
+  board: picow
+  profile: maximum_gpio
+  ha:
+    name: "Victron VE.Direct"
+    manufacturer: Victron Energy
+    model: picow-gateway
+
+mqtt:
+  host: 192.168.1.50
+  port: 1883
+  tls: false
+  base_topic: mobile/victron
+  client_id: mqttpi-victron-vedirect-01
+  homeassistant:
+    discovery: true
+    discovery_prefix: homeassistant
+  retain: true
+  qos: 1
+
+buses:
+  onewire: { enabled: false, pin: 7 }
+  i2c:     { enabled: false, controller: 0, sda: 0, scl: 1 }
+  spi:     { enabled: false, controller: 0, sck: 2, mosi: 3, miso: 4, cs: 5 }
+  i2s:     { enabled: false, bclk: 16, lrck: 17, din: 18, dout: 19 }
+  can:     { enabled: false }
+  ve_direct:
+    enabled: true
+    uart: 1
+    tx: 4
+    rx: 5
+    baud: 19200
+    devices:
+      - id: shunt_main
+        product: auto
+        alias: house_battery
+        ha:
+          name: "House Battery"
+          manufacturer: Victron Energy
+
+pwm:
+  enabled: false
+  pins: [8, 9, 10, 11, 12, 13, 14, 15]
+
+mqtt_aliases: {}
+
+victron:
+  ve_direct:
+    publish:
+      interval_ms: 5000
+      retain: true
+    fields:
+      - key: V
+        alias: battery_voltage
+        scale: 0.001
+        ha:
+          name: "Battery Voltage"
+          device_class: voltage
+          state_class: measurement
+          unit_of_measurement: "V"
+      - key: I
+        alias: battery_current
+        scale: 0.001
+        ha:
+          name: "Battery Current"
+          device_class: current
+          state_class: measurement
+          unit_of_measurement: "A"
+      - key: SOC
+        alias: battery_soc
+        ha:
+          name: "Battery SOC"
+          state_class: measurement
+          unit_of_measurement: "%"
+      - key: P
+        alias: battery_power
+        ha:
+          name: "Battery Power"
+          device_class: power
+          state_class: measurement
+          unit_of_measurement: "W"
+      - key: TTG
+        alias: time_to_go
+        ha:
+          name: "Time to Go"
+          state_class: measurement
+          unit_of_measurement: "min"
+
+pins: []

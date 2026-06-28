@@ -1,0 +1,132 @@
+# CAN — RV-C read/write (250 kbit/s, 29-bit extended IDs)
+#
+# RV-C is CAN 2.0B @ 250 kbit/s (J1939-family PGNs). Supports peer-to-peer
+# control of lights, HVAC, tanks, awnings, etc. on certified RV-C networks.
+#
+# Pico W options (same as generic CAN):
+#   • MCP2515 SPI adapter + transceiver (simplest)
+#   • can2040 + SN65HVD230/TJA1050 on 2 GPIO (fewer parts, uses PIO block)
+#
+# mode: read_write — required for RV-C command PGNs (dimmer, relay, HVAC set).
+# Only attach to buses you own or have permission to control.
+#
+#   cp examples/can-rvc.yaml config.yaml
+#   Pair with: examples/sites/rv.yaml (GPIO) or use standalone on RV-C only node
+
+device:
+  id: rvc-gateway-01
+  board: picow
+  profile: sensors
+  ha:
+    name: "RV-C Gateway"
+    manufacturer: mqttpi
+    model: picow
+
+mqtt:
+  host: 192.168.1.50
+  port: 1883
+  tls: false
+  base_topic: mobile/rvc-gateway-01
+  client_id: mqttpi-rvc-gateway-01
+  homeassistant:
+    discovery: true
+    discovery_prefix: homeassistant
+  payload_on: "ON"
+  payload_off: "OFF"
+  retain: true
+  qos: 1
+
+buses:
+  onewire: { enabled: false, pin: 7 }
+  i2c:     { enabled: false, controller: 0, sda: 0, scl: 1 }
+  spi:
+    enabled: true
+    controller: 0
+    sck: 2
+    mosi: 3
+    miso: 4
+    cs: 5
+  i2s:     { enabled: false, bclk: 16, lrck: 17, din: 18, dout: 19 }
+  can:
+    enabled: true
+    backend: mcp2515
+    spi_controller: 0
+    cs: 5
+    int: 6
+    oscillator_hz: 16000000
+    bitrate: 250000
+    mode: read_write
+    frame_format: extended
+    rvc:
+      enabled: true
+      source_address: 0x80
+      address_claim: dynamic
+    termination_ohm: 120
+
+pwm:
+  enabled: false
+  pins: [8, 9, 10, 11, 12, 13, 14, 15]
+
+mqtt_aliases: {}
+
+can:
+  publish:
+    retain: true
+  rvc:
+    # --- Read: tank levels, temps, status from RV-C bus ---
+    listen:
+      - pgn: 0x1FFB9
+        alias: fresh_tank_level
+        instance: 0
+        ha:
+          name: "Fresh Tank Level (RVC)"
+          state_class: measurement
+          unit_of_measurement: "%"
+      - pgn: 0x1FFBB
+        alias: grey_tank_level
+        instance: 0
+        ha:
+          name: "Grey Tank Level (RVC)"
+          state_class: measurement
+          unit_of_measurement: "%"
+      - pgn: 0x1FFBD
+        alias: black_tank_level
+        instance: 0
+        ha:
+          name: "Black Tank Level (RVC)"
+          state_class: measurement
+          unit_of_measurement: "%"
+      - pgn: 0x1FEDA
+        alias: interior_temp
+        instance: 0
+        ha:
+          name: "Interior Temp (RVC)"
+          device_class: temperature
+          state_class: measurement
+          unit_of_measurement: "°C"
+    # --- Write: HA switch/number → RV-C command PGNs ---
+    command:
+      - pgn: 0x1FFD8
+        alias: ceiling_light
+        instance: 0
+        type: dimmer
+        ha:
+          name: "Ceiling Light (RVC)"
+          min: 0
+          max: 100
+      - pgn: 0x1FFD8
+        alias: accent_light
+        instance: 1
+        type: dimmer
+        ha:
+          name: "Accent Light (RVC)"
+          min: 0
+          max: 100
+      - pgn: 0x1FFD9
+        alias: hvac_mode
+        instance: 0
+        type: enum
+        ha:
+          name: "HVAC Mode (RVC)"
+
+pins: []

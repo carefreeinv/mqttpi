@@ -1,0 +1,142 @@
+# Site: House — residential monitoring & control
+#
+# Typical hardware: entry doors, garage, HVAC relay, accent lighting,
+# water leak, motion. Pi 4 drives I2S DAC for numbered door/alert SFX.
+#
+#   cp examples/sites/house.yaml config.yaml
+#
+# SFX files (numbered) on Pi: /opt/mqttpi/sfx/01.wav … 99.wav
+# HA buttons auto-discovered per track; automations can call by number.
+
+device:
+  id: house-main
+  board: pi4
+  profile: sensors
+  ha:
+    name: "House"
+    manufacturer: mqttpi
+    model: pi4
+
+mqtt:
+  host: 192.168.1.50
+  port: 1883
+  tls: false
+  base_topic: home/house
+  client_id: mqttpi-house-main
+  homeassistant:
+    discovery: true
+    discovery_prefix: homeassistant
+  payload_on: "ON"
+  payload_off: "OFF"
+  retain: true
+  qos: 1
+
+buses:
+  onewire: { enabled: true, pin: 4 }
+  i2c:     { enabled: true, controller: 1, sda: 2, scl: 3 }
+  spi:     { enabled: false, controller: 0, sck: 11, mosi: 10, miso: 9, cs: 8 }
+  i2s:
+    enabled: true
+    bclk: 18
+    lrck: 19
+    din: 20
+    dout: 21
+    sfx:
+      enabled: true
+      directory: /opt/mqttpi/sfx
+      command_topic: "{base_topic}/sfx/play"
+      tracks:
+        - number: 1
+          alias: door_chime
+          file: "01-door-chime.wav"
+          ha: { name: "SFX Door Chime" }
+        - number: 2
+          alias: doorbell
+          file: "02-doorbell.wav"
+          ha: { name: "SFX Doorbell" }
+        - number: 3
+          alias: alarm_beep
+          file: "03-alarm.wav"
+          ha: { name: "SFX Alarm" }
+        - number: 4
+          alias: garage_notify
+          file: "04-garage.wav"
+          ha: { name: "SFX Garage Alert" }
+
+pwm:
+  enabled: true
+  pins: [12, 13]
+
+mqtt_aliases:
+  front_door_contact: front_door
+  back_door_contact: back_door
+  garage_door_contact: garage_door
+
+pins:
+  - pin: 5
+    alias: front_door
+    direction: input
+    pull: up
+    invert: true
+    debounce_ms: 50
+    ha: { name: "Front Door", device_class: door }
+
+  - pin: 6
+    alias: back_door
+    direction: input
+    pull: up
+    invert: true
+    debounce_ms: 50
+    ha: { name: "Back Door", device_class: door }
+
+  - pin: 16
+    alias: garage_door
+    direction: input
+    pull: up
+    invert: true
+    debounce_ms: 50
+    ha: { name: "Garage Door", device_class: garage_door }
+
+  - pin: 17
+    alias: porch_accent
+    direction: output
+    initial: false
+    ha: { name: "Porch Accent Lights", icon: mdi:string-lights }
+
+  - pin: 22
+    alias: living_accent
+    direction: output
+    initial: false
+    ha: { name: "Living Room Accent", icon: mdi:led-strip }
+
+  - pin: 23
+    alias: hvac_heat
+    direction: output
+    initial: false
+    ha: { name: "HVAC Heat Call", icon: mdi:fire }
+
+  - pin: 24
+    alias: hvac_cool
+    direction: output
+    initial: false
+    ha: { name: "HVAC Cool Call", icon: mdi:snowflake }
+
+  - pin: 25
+    alias: hvac_fan
+    direction: output
+    initial: false
+    ha: { name: "HVAC Fan", icon: mdi:fan }
+
+  - pin: 27
+    alias: water_leak
+    direction: input
+    pull: up
+    debounce_ms: 100
+    ha: { name: "Water Leak", device_class: moisture }
+
+  - pin: 12
+    alias: dim_entry
+    direction: pwm_output
+    frequency_hz: 1000
+    initial_duty: 0
+    ha: { name: "Entry Dimmer", min: 0, max: 100, unit_of_measurement: "%" }

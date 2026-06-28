@@ -1,0 +1,61 @@
+# Basic digital I/O — relay + button (HA switch + binary_sensor)
+#
+#   cp examples/digital-in-out.yaml config.yaml
+#
+# Wiring:
+#   GP0 → relay module IN1
+#   GP1 → button to GND (internal pull-up)
+#
+# HA entities (via MQTT discovery):
+#   switch.relay_main
+#   binary_sensor.button_main
+
+device:
+  id: relay-button-01
+  board: picow
+  profile: maximum_gpio
+  ha:
+    name: "Relay Button Node"
+
+mqtt:
+  host: 192.168.1.50
+  port: 1883
+  tls: false
+  base_topic: mqttpi/relay-button-01
+  client_id: mqttpi-relay-button-01
+  homeassistant:
+    discovery: true
+    discovery_prefix: homeassistant
+  payload_on: "ON"
+  payload_off: "OFF"
+  retain: true
+  qos: 1
+
+buses:
+  onewire: { enabled: false, pin: 7 }
+  i2c:     { enabled: false, controller: 0, sda: 0, scl: 1 }
+  spi:     { enabled: false, controller: 0, sck: 2, mosi: 3, miso: 4, cs: 5 }
+  i2s:     { enabled: false, bclk: 16, lrck: 17, din: 18, dout: 19 }
+
+pwm:
+  enabled: false
+  pins: [8, 9, 10, 11, 12, 13, 14, 15]
+
+mqtt_aliases: {}
+
+pins:
+  - pin: 0
+    alias: relay_main
+    direction: output
+    initial: false
+    ha:
+      name: "Relay Main"
+
+  - pin: 1
+    alias: button_main
+    direction: input
+    pull: up
+    debounce_ms: 50
+    ha:
+      name: "Button Main"
+      device_class: opening

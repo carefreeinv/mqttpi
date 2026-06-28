@@ -1,0 +1,196 @@
+# Site: Camper Top — truck camper on pickup bed
+#
+# Truck tires (TPMS), camper door, level (critical on uneven campsites),
+# interior/reading lights, vent fan, propane, truck engine sense.
+#
+#   cp examples/sites/camper-top.yaml config.yaml
+
+device:
+  id: camper-top-01
+  board: picow
+  profile: sensors
+  ha:
+    name: "Camper Top"
+    manufacturer: mqttpi
+    model: picow
+
+mqtt:
+  host: 192.168.1.50
+  port: 1883
+  tls: false
+  base_topic: mobile/camper-top
+  client_id: mqttpi-camper-top-01
+  homeassistant:
+    discovery: true
+    discovery_prefix: homeassistant
+  payload_on: "ON"
+  payload_off: "OFF"
+  retain: true
+  qos: 1
+
+buses:
+  onewire: { enabled: false, pin: 7 }
+  i2c:     { enabled: true, controller: 0, sda: 0, scl: 1 }
+  spi:     { enabled: false, controller: 0, sck: 2, mosi: 3, miso: 4, cs: 5 }
+  i2s:     { enabled: false, bclk: 16, lrck: 17, din: 18, dout: 19 }
+
+pwm:
+  enabled: false
+  pins: [8, 9, 10, 11, 12, 13, 14, 15]
+
+mqtt_aliases:
+  camper_door_contact: camper_door
+  truck_engine_sense: truck_engine
+
+sensors:
+  level:
+    enabled: true
+    bus: i2c
+    chip: mpu6050
+    address: 0x68
+    mount: floor_plane
+    calibration:
+      mode: on_boot
+      command_topic: "{base_topic}/level/calibrate"
+    publish:
+      interval_ms: 2000
+      retain: true
+    readings:
+      pitch:
+        alias: level_pitch
+        ha:
+          name: "Camper Pitch"
+          state_class: measurement
+          unit_of_measurement: "°"
+          icon: mdi:angle-acute
+      roll:
+        alias: level_roll
+        ha:
+          name: "Camper Roll"
+          state_class: measurement
+          unit_of_measurement: "°"
+          icon: mdi:angle-acute
+      deviation:
+        alias: level_deviation
+        type: max_abs
+        ha:
+          name: "Level Deviation"
+          state_class: measurement
+          unit_of_measurement: "°"
+          icon: mdi:spirit-level
+      is_level:
+        alias: is_level
+        type: binary
+        threshold_deg: 2.0
+        ha:
+          name: "Camper Level OK"
+          icon: mdi:check-circle
+
+  tpms:
+    enabled: true
+    receiver:
+      type: uart
+      controller: 1
+      tx: 8
+      rx: 9
+      baud: 115200
+    protocol: tpms433
+    pair_topic: "{base_topic}/tpms/pair"
+    publish:
+      retain: true
+    units:
+      pressure: psi
+      temperature: f
+    wheels:
+      - sensor_id: "REPLACE_TRUCK_FL"
+        position: truck_fl
+        alias: tpms_truck_fl
+        thresholds: { low_psi: 35, high_psi: 65 }
+        ha: { name: "Truck Tire FL" }
+      - sensor_id: "REPLACE_TRUCK_FR"
+        position: truck_fr
+        alias: tpms_truck_fr
+        thresholds: { low_psi: 35, high_psi: 65 }
+        ha: { name: "Truck Tire FR" }
+      - sensor_id: "REPLACE_TRUCK_RL"
+        position: truck_rl
+        alias: tpms_truck_rl
+        thresholds: { low_psi: 35, high_psi: 65 }
+        ha: { name: "Truck Tire RL" }
+      - sensor_id: "REPLACE_TRUCK_RR"
+        position: truck_rr
+        alias: tpms_truck_rr
+        thresholds: { low_psi: 35, high_psi: 65 }
+        ha: { name: "Truck Tire RR" }
+
+pins:
+  # GP0/1 = I2C sensors
+  - pin: 7
+    alias: camper_door
+    direction: input
+    pull: up
+    invert: true
+    debounce_ms: 50
+    ha: { name: "Camper Door", device_class: door }
+
+  - pin: 2
+    alias: truck_engine
+    direction: input
+    pull: down
+    debounce_ms: 500
+    ha: { name: "Truck Engine Running", device_class: running }
+
+  - pin: 3
+    alias: interior_main
+    direction: output
+    initial: false
+    ha: { name: "Interior Lights", icon: mdi:lightbulb-group }
+
+  - pin: 4
+    alias: reading_light
+    direction: output
+    initial: false
+    ha: { name: "Reading Light", icon: mdi:book-open-page-variant }
+
+  - pin: 6
+    alias: vent_fan
+    direction: output
+    initial: false
+    ha: { name: "Roof Vent Fan", icon: mdi:fan }
+
+  - pin: 10
+    alias: accent_strip
+    direction: output
+    initial: false
+    ha: { name: "Accent Strip", icon: mdi:led-strip }
+
+  - pin: 11
+    alias: furnace_call
+    direction: output
+    initial: false
+    ha: { name: "Furnace Call", icon: mdi:fire }
+
+  - pin: 14
+    alias: propane_alarm
+    direction: input
+    pull: down
+    debounce_ms: 200
+    ha: { name: "Propane Alarm", device_class: gas }
+
+  - pin: 15
+    alias: co_detector
+    direction: input
+    pull: down
+    debounce_ms: 200
+    ha: { name: "CO Detector", device_class: carbon_monoxide }
+
+  - pin: 26
+    alias: house_battery
+    direction: analog_input
+    publish: { interval_ms: 30000 }
+    ha:
+      name: "House Battery"
+      device_class: voltage
+      state_class: measurement
+      unit_of_measurement: "V"
+      scale: { min: 10.5, max: 14.8 }

@@ -1,0 +1,55 @@
+# JBD BMS — wired UART monitor (migrated from bms0)
+#
+# JBD / Jiabaida protocol @ 9600 8N1. Overkill Solar, many LiFePO₄ packs.
+# Requires Linux Pi (serial port). Pico W cannot run this daemon.
+#
+# Wiring:
+#   BMS TX  → Pi RX  (GPIO15 / pin 10, or USB-TTL RX)
+#   BMS RX  → Pi TX  (GPIO14 / pin  8, or USB-TTL TX)
+#   BMS GND → Pi GND
+#   Remove BMS Bluetooth module from UART port first.
+#
+#   cp examples/jbd-bms.yaml config.yaml
+#   cp secrets.example.yaml secrets.yaml
+#   python3 -m mqttpi.bms.bridge --once -v
+
+device:
+  id: house-bms
+  board: pi4
+  ha:
+    name: "House Battery BMS"
+
+mqtt:
+  host: 192.168.1.50
+  port: 1883
+  tls: false
+  base_topic: mqttpi/house-bms
+  client_id: mqttpi-house-bms
+  homeassistant:
+    discovery: true
+    discovery_prefix: homeassistant
+  retain: true
+
+bms:
+  enabled: true
+  protocol: jbd
+  port: /dev/serial0
+  baudrate: 9600
+  response_timeout: 2
+  poll_interval: 30
+  retry_delay: 10
+  ha:
+    name: "LiFePO4 House Pack"
+    device_id: jbd_house_pack
+
+buses:
+  onewire: { enabled: false, pin: 4 }
+  i2c:     { enabled: false, controller: 1, sda: 2, scl: 3 }
+  spi:     { enabled: false, controller: 0, sck: 11, mosi: 10, miso: 9, cs: 8 }
+  i2s:     { enabled: false, bclk: 18, lrck: 19, din: 20, dout: 21 }
+
+pwm:
+  enabled: false
+  pins: [12, 13]
+
+pins: []
