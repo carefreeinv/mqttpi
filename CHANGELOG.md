@@ -6,6 +6,15 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Planned
+
+- Unified mqttpi daemon (GPIO + BMS + CAN + expanders)
+- Pico W firmware / MicroPython port
+- MCP23017 expander driver
+- Cargo trailer field deployment on dedicated Pico W
+
+## [0.1.2] - 2026-06-28
+
 ### Added
 
 - `speaker-zones-8` example — 8-zone speaker amp control on native Pico W GPIO (GP0–GP7), based on `relay-bank-16`
@@ -14,13 +23,6 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Changed
 
 - `sites/store` — 70 V signal paths prefer **unbalanced analog (RCA)** or **I2S → AES3** to amp; avoid balanced analog XLR from Pi
-
-### Planned
-
-- Unified mqttpi daemon (GPIO + BMS + CAN + expanders)
-- Pico W firmware / MicroPython port
-- MCP23017 expander driver
-- Cargo trailer field deployment on dedicated Pico W
 
 ## [0.1.1] - 2026-06-28
 
@@ -56,6 +58,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Most subsystems are **configuration contracts**; only the BMS UART bridge is runnable in v0.1.0.
 - Cargo trailer first deployment is documented but **not registered** with the central broker yet.
 
-[Unreleased]: https://github.com/carefreeinv/mqttpi/compare/v0.1.1...HEAD
+[Unreleased]: https://github.com/carefreeinv/mqttpi/compare/v0.1.2...HEAD
+[0.1.2]: https://github.com/carefreeinv/mqttpi/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/carefreeinv/mqttpi/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/carefreeinv/mqttpi/releases/tag/v0.1.0
