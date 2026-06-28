@@ -1,0 +1,169 @@
+# Site: Store — retail background music (streaming BGM) + I2S amp + floor GPIO
+#
+# Pi 4 drives continuous background audio out I2S to a stereo amp module or
+# line-level input on a commercial 70 V distribution amp (multi-ceiling-speaker retail).
+# Short SFX (door chime, closing soon) duck the BGM stream when configured.
+#
+# Amp options (see store.md):
+#   • Boutique / single zone: I2S class-D board (TPA3116, 20–200 W)
+#   • Multi-speaker retail: I2S DAC (PCM5102) → line in on 70 V amp
+#
+#   cp examples/sites/store.yaml config.yaml
+
+device:
+  id: store-main
+  board: pi4
+  profile: sensors
+  ha:
+    name: "Store"
+    manufacturer: mqttpi
+    model: pi4
+
+mqtt:
+  host: 192.168.1.50
+  port: 1883
+  tls: false
+  base_topic: site/store
+  client_id: mqttpi-store-main
+  homeassistant:
+    discovery: true
+    discovery_prefix: homeassistant
+  payload_on: "ON"
+  payload_off: "OFF"
+  retain: true
+  qos: 1
+
+buses:
+  onewire: { enabled: false, pin: 4 }
+  i2c:     { enabled: true, controller: 1, sda: 2, scl: 3 }
+  spi:     { enabled: false, controller: 0, sck: 11, mosi: 10, miso: 9, cs: 8 }
+  i2s:
+    enabled: true
+    bclk: 18
+    lrck: 19
+    din: 20
+    dout: 21
+    amp:
+      # line_out_70v: I2S DAC → RCA/3.5 mm → commercial 70 V head-end (ceiling speakers)
+      # class_d_direct: I2S amp module drives 4–8 Ω speakers in one zone (boutique)
+      profile: line_out_70v
+      dac: PCM5102
+      power_stage: "70 V distribution amp (e.g. 60–200 W)"
+      wattage_range: "20-200"
+    stream:
+      enabled: true
+      autoplay_on_boot: true
+      default_source: local_playlist
+      sample_rate_hz: 44100
+      channels: 2
+      command_topic: "{base_topic}/audio/stream/set"
+      state_topic: "{base_topic}/audio/stream/state"
+      source_topic: "{base_topic}/audio/source/set"
+      volume_set_topic: "{base_topic}/audio/volume/set"
+      volume_state_topic: "{base_topic}/audio/volume/state"
+      volume_default: 35
+      volume_min: 0
+      volume_max: 100
+      ha:
+        name: "Store Background Music"
+        device_class: speaker
+      sources:
+        - alias: local_playlist
+          type: directory
+          path: /opt/mqttpi/bgm/
+          shuffle: true
+          loop: true
+          formats: [mp3, flac, ogg]
+          ha: { name: "Local Playlist" }
+        - alias: icecast
+          type: http_stream
+          url: "http://stream.example.com:8000/retail.mp3"
+          reconnect: true
+          ha: { name: "Corporate BGM Feed" }
+        - alias: snapcast
+          type: snapcast_client
+          server: snapcast.local
+          stream: default
+          ha: { name: "Snapcast Office Mix" }
+    sfx:
+      enabled: true
+      directory: /opt/mqttpi/sfx/store
+      command_topic: "{base_topic}/sfx/play"
+      duck_stream: true
+      duck_level_percent: 15
+      restore_after_ms: 8000
+      tracks:
+        - number: 1
+          alias: door_chime
+          file: "01-door-chime.wav"
+          ha: { name: "SFX Door Chime" }
+        - number: 2
+          alias: closing_soon
+          file: "02-closing-soon.wav"
+          ha: { name: "SFX Closing Soon" }
+        - number: 3
+          alias: thank_you
+          file: "03-thank-you.wav"
+          ha: { name: "SFX Thank You" }
+
+pwm:
+  enabled: true
+  pins: [12, 13]
+
+mqtt_aliases:
+  open_sign_relay: open_sign
+
+pins:
+  - pin: 5
+    alias: front_door
+    direction: input
+    pull: up
+    invert: true
+    debounce_ms: 50
+    ha: { name: "Front Door", device_class: door }
+
+  - pin: 6
+    alias: stockroom_door
+    direction: input
+    pull: up
+    invert: true
+    debounce_ms: 50
+    ha: { name: "Stockroom Door", device_class: door }
+
+  - pin: 16
+    alias: motion_floor
+    direction: input
+    pull: down
+    debounce_ms: 500
+    ha: { name: "Sales Floor Motion", device_class: occupancy }
+
+  - pin: 17
+    alias: open_sign
+    direction: output
+    initial: false
+    ha: { name: "Open Sign", icon: mdi:store }
+
+  - pin: 22
+    alias: display_accent
+    direction: output
+    initial: false
+    ha: { name: "Window Display Accent", icon: mdi:spotlight-beam }
+
+  - pin: 23
+    alias: amp_power
+    direction: output
+    initial: false
+    ha: { name: "Amplifier Power", icon: mdi:amplifier }
+
+  - pin: 24
+    alias: hvac_fan
+    direction: output
+    initial: false
+    ha: { name: "HVAC Fan", icon: mdi:fan }
+
+  - pin: 12
+    alias: display_dim
+    direction: pwm_output
+    frequency_hz: 1000
+    initial_duty: 0
+    ha: { name: "Display Dimmer", min: 0, max: 100, unit_of_measurement: "%" }

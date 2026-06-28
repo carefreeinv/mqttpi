@@ -53,6 +53,7 @@ Runtime merges `secrets.yaml` onto `config.yaml`. Home Assistant MQTT **discover
 | [house.yaml](sites/house.yaml) | [house.md](sites/house.md) |
 | [workshop.yaml](sites/workshop.yaml) | [workshop.md](sites/workshop.md) |
 | [club.yaml](sites/club.yaml) | [club.md](sites/club.md) |
+| [store.yaml](sites/store.yaml) | [store.md](sites/store.md) |
 | [rv.yaml](sites/rv.yaml) | [rv.md](sites/rv.md) |
 | [motorhome.yaml](sites/motorhome.yaml) | [motorhome.md](sites/motorhome.md) |
 | [skoolie.yaml](sites/skoolie.yaml) | [skoolie.md](sites/skoolie.md) |
