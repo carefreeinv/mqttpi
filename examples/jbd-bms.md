@@ -14,12 +14,14 @@ cp secrets.example.yaml secrets.yaml
 # One-shot test (verbose)
 python3 -m mqttpi.bms.bridge --once -v
 
-# Continuous bridge (foreground)
+# Continuous — unified daemon (GPIO + BMS) or BMS-only bridge
+python3 -m mqttpi -v
 python3 -m mqttpi.bms.bridge -v
 
-# Optional systemd service (defaults to ~/mqttpi — edit unit paths if needed)
-sudo cp mqttpi-bms.service /etc/systemd/system/
-sudo systemctl enable --now mqttpi-bms.service
+# Optional systemd (manual — not installed by default)
+#   mqttpi.service      — unified daemon
+#   mqttpi-bms.service  — BMS-only bridge
+# See daemon.md for install steps.
 ```
 
 **Requirements:** Linux with a serial port (`/dev/serial0`, `/dev/ttyUSB0`, etc.). **Pico W cannot run this daemon** — it needs a full Python runtime and blocking UART I/O.
@@ -152,6 +154,7 @@ A: Yes — run two bridge instances with separate configs, serial ports, `device
 | `mqttpi/bms/jbd_uart.py` | **Working** — serial client |
 | `mqttpi/bms/bridge.py` | **Working** — poll loop + CLI |
 | `mqttpi/bms/ha_mqtt.py` | **Working** — HA discovery + state publish |
-| `mqttpi-bms.service` | **Working** — systemd unit template |
+| `mqttpi.service` | **Working** — unified daemon systemd template (manual install) |
+| `mqttpi-bms.service` | **Working** — BMS-only systemd template (manual install) |
 
-This is the **only example in this set with shipped Python firmware/bridge code**. All other protocol examples below are **config contracts** awaiting Pico W (or host) runtime implementation.
+BMS and **relay-bank-16** are the two examples supported by the unified daemon today. Other protocol/GPIO examples remain **config contracts**.

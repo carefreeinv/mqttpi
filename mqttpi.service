@@ -1,0 +1,23 @@
+# mqttpi unified daemon — GPIO + optional BMS
+# Assumes repo cloned to ~/mqttpi for User=pi.
+# Edit WorkingDirectory and -c/-s paths if you installed elsewhere.
+#
+# NOT installed by default. To install manually:
+#   sudo cp mqttpi.service /etc/systemd/system/
+#   sudo systemctl enable --now mqttpi.service
+
+[Unit]
+Description=mqttpi MQTT GPIO and BMS daemon
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=pi
+WorkingDirectory=%h/mqttpi
+ExecStart=/usr/bin/python3 -m mqttpi -c %h/mqttpi/config.yaml -s %h/mqttpi/secrets.yaml
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

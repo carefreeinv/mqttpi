@@ -8,9 +8,31 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Planned
 
-- Unified mqttpi daemon (GPIO + BMS + CAN + expanders)
+- PWM, CAN, I2C expanders, Victron in unified daemon
 - Pico W firmware / MicroPython port
 - MCP23017 expander driver
+
+## [0.2.0] - 2026-06-28
+
+### Added
+
+- **Unified daemon** (`python3 -m mqttpi`) — one process for GPIO and optional BMS
+- GPIO subsystem: `direction: output` (HA switch) and `direction: input` (HA binary_sensor) with MQTT command topics
+- `mqttpi/gpio/` — RPi.GPIO backend, mock backend (`--mock-gpio`), HA discovery
+- `mqttpi/mqtt/` — shared MQTT client for GPIO command handling
+- `mqttpi/bms/subsystem.py` — BMS poll loop as a daemon subsystem
+- `mqttpi.service` — systemd unit template for the unified daemon (manual install only)
+- [daemon.md](daemon.md) — daemon quick start, supported examples, troubleshooting
+
+### Changed
+
+- Package version `0.1.0` → `0.2.0`
+- **Supported runtime examples:** [`relay-bank-16`](examples/relay-bank-16.yaml) (16 relay outputs) and [`jbd-bms`](examples/jbd-bms.yaml) (BMS)
+- `mqttpi.bms.bridge` retained for BMS-only / `--once` diagnostics
+- `mqttpi-bms.service` — notes unified daemon alternative; manual install only
+- README, example docs, and `config.example.md` updated for foreground daemon usage
+- `scripts/stage_docs.py` — stages `daemon.md` into the docs site nav
+- systemd units are templates only — nothing installed automatically
 
 ## [0.1.3] - 2026-06-28
 
@@ -64,7 +86,8 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 - Most subsystems are **configuration contracts**; only the BMS UART bridge is runnable in v0.1.0.
 
-[Unreleased]: https://github.com/carefreeinv/mqttpi/compare/v0.1.3...HEAD
+[Unreleased]: https://github.com/carefreeinv/mqttpi/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/carefreeinv/mqttpi/compare/v0.1.3...v0.2.0
 [0.1.3]: https://github.com/carefreeinv/mqttpi/compare/v0.1.2...v0.1.3
 [0.1.2]: https://github.com/carefreeinv/mqttpi/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/carefreeinv/mqttpi/compare/v0.1.0...v0.1.1

@@ -1,4 +1,6 @@
-# mqttpi JBD BMS bridge — assumes repo cloned to ~/mqttpi for User=pi
+# mqttpi JBD BMS bridge (standalone) — assumes repo cloned to ~/mqttpi for User=pi
+# For GPIO + BMS in one process, use mqttpi.service instead.
+# NOT installed by default. See daemon.md for manual install steps.
 # Edit WorkingDirectory and -c/-s paths if you installed elsewhere.
 
 [Unit]

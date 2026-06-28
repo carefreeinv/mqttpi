@@ -25,6 +25,8 @@ def repo_to_docs(rel: Path) -> str | None:
         return "changelog.md"
     if rel == Path("config.example.md"):
         return "configuration.md"
+    if rel == Path("daemon.md"):
+        return "daemon.md"
     if len(rel.parts) == 3 and rel.parts[0] == "projects" and rel.name == "README.md":
         return f"projects/{rel.parent.name}.md"
     parts = list(rel.parts)
@@ -60,6 +62,7 @@ def rewrite_links(text: str, src: Path, dst: Path) -> str:
         "](examples/README.md)": "](examples/index.md)",
         "](CHANGELOG.md)": "](changelog.md)",
         "](config.example.md)": "](configuration.md)",
+        "](daemon.md)": "](daemon.md)",
         "../projects/cargo-trailer/README.md": "../projects/cargo-trailer.md",
         "projects/cargo-trailer/README.md": "projects/cargo-trailer.md",
         "](../../examples/sites/": "](../examples/sites/",
@@ -161,6 +164,7 @@ def main() -> None:
     DOCS.mkdir()
 
     copy_md(ROOT / "README.md", DOCS / "index.md")
+    copy_md(ROOT / "daemon.md", DOCS / "daemon.md")
     copy_md(ROOT / "CHANGELOG.md", DOCS / "changelog.md")
     copy_md(ROOT / "config.example.md", DOCS / "configuration.md")
     copy_md(ROOT / "projects" / "cargo-trailer" / "README.md", DOCS / "projects" / "cargo-trailer.md")
@@ -171,6 +175,7 @@ def main() -> None:
         [
             "nav:",
             "  - index.md",
+            "  - daemon.md",
             "  - configuration.md",
             "  - examples",
             "  - projects",

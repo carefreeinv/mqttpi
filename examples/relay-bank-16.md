@@ -11,7 +11,13 @@ Drive **16 relays** using **only Pico W header GPIO** — no I2C MCP23017, no SP
 ```bash
 cp examples/relay-bank-16.yaml config.yaml
 cp secrets.example.yaml secrets.yaml
+# Edit mqtt.host, secrets.yaml
+
+python3 -m mqttpi -v                  # foreground daemon
+python3 -m mqttpi --mock-gpio -v      # test without GPIO hardware
 ```
+
+See [daemon.md](../daemon.md) for optional systemd setup (manual install only).
 
 ## Pin map (GP0–GP15)
 
@@ -77,7 +83,7 @@ A: **16 = native GPIO only.** [32 requires 2× MCP23017 expanders](relay-bank-32
 A: Yes — a single MCP23017 @ `0x20` gives 16 relay outputs on I2C (GP0/GP1) and frees GP0–GP15 for other uses. This example favors zero extra parts; see the scaling table in [relay-bank-32.md](relay-bank-32.md).
 
 **Q: Implementation status?**  
-A: Config contract — GPIO daemon not yet merged; BMS bridge is separate today.
+A: **Supported** by the unified daemon (`python3 -m mqttpi`) — 16 switch outputs with HA discovery. PWM, expanders, and Pico W firmware are not in scope yet.
 
 ## Related
 

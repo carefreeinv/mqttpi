@@ -26,13 +26,14 @@ Configure pins, buses, and sensors in YAML; publish to an external MQTT broker w
 - **JBD BMS** — wired UART monitor 
 - **Site templates** — RV, cargo trailer, semi, skoolie, house, robot, 32-relay bank, …
 
-## Status (v0.1.3)
+## Status (v0.2.0)
 
 | Component | Status |
 |-----------|--------|
 | Config schema & examples | Ready |
-| JBD BMS → MQTT → HA | **Implemented** (`mqttpi.bms.bridge`) |
-| GPIO / PWM / CAN / expanders | Config contract — daemon in progress |
+| Unified daemon (`python3 -m mqttpi`) | **Implemented** — GPIO outputs/inputs + optional BMS |
+| JBD BMS → MQTT → HA | **Implemented** (daemon or `mqttpi.bms.bridge`) |
+| PWM / CAN / I2C expanders / Victron | Config contract — not in daemon yet |
 
 ## Quick start
 
@@ -55,13 +56,23 @@ cp secrets.example.yaml secrets.yaml
 
 Edit `device.id`, `mqtt.host`, and `secrets.yaml`.
 
-### 3. BMS only (Pi + JBD UART)
+### 3. Run the daemon
 
 ```bash
+# 16 relays (GPIO outputs)
+cp examples/relay-bank-16.yaml config.yaml
+
+# Or BMS only (Pi + JBD UART)
 cp examples/jbd-bms.yaml config.yaml
+
+# Foreground — stays running until Ctrl+C
+python3 -m mqttpi -v
+
+# BMS UART test without the full daemon loop
 python3 -m mqttpi.bms.bridge --once -v
-python3 -m mqttpi.bms.bridge
 ```
+
+See [daemon.md](daemon.md) for subsystem details, `--mock-gpio`, and optional systemd setup (not installed by default).
 
 ### 4. Home Assistant
 
@@ -119,12 +130,15 @@ mqttpi/
 ├── secrets.example.yaml
 ├── requirements.txt
 ├── mqttpi/              # Python package
-│   ├── config.py
-│   └── bms/             # JBD UART bridge (implemented)
+│   ├── daemon.py        # Unified GPIO + BMS daemon
+│   ├── gpio/            # Relay/sensor GPIO subsystem
+│   ├── mqtt/            # Shared MQTT client
+│   └── bms/             # JBD UART subsystem
 ├── examples/            # YAML + markdown docs
 ├── projects/            # Deployment guides
 │   └── cargo-trailer/
-└── mqttpi-bms.service   # systemd template
+├── mqttpi.service       # systemd template (manual install)
+└── mqttpi-bms.service   # BMS-only systemd template
 ```
 
 ## Hardware notes
@@ -137,6 +151,9 @@ mqttpi/
 ## Development
 
 ```bash
+# GPIO daemon (no broker needed for import check)
+PYTHONPATH=. python3 -m mqttpi -c examples/relay-bank-16.yaml --mock-gpio -v
+
 # BMS bridge tests (no BMS attached → expect serial timeout)
 PYTHONPATH=. python3 -m mqttpi.bms.bridge -c examples/jbd-bms.yaml --once -v
 

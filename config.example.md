@@ -65,15 +65,16 @@ A: No. Copy to `config.yaml` (gitignored) and edit that.
 A: `secrets.yaml` only — never commit credentials.
 
 **Q: How do entities appear in Home Assistant?**  
-A: Enable MQTT integration with discovery; mqttpi publishes `homeassistant/*/config` on connect (when the daemon runs).
+A: Enable MQTT integration with discovery; run `python3 -m mqttpi` — the daemon publishes `homeassistant/*/config` on startup.
 
 **Q: Is this file enough to run mqttpi today?**  
-A: With an empty `pins[]` list, only the **BMS bridge** (`python3 -m mqttpi.bms.bridge`) runs from config today. GPIO/CAN/Victron daemons are still config contracts — use `examples/jbd-bms.yaml` for BMS.
+A: Add `pins[]` entries (see [`relay-bank-16.yaml`](examples/relay-bank-16.yaml)) or enable `bms` (see [`jbd-bms.yaml`](examples/jbd-bms.yaml)), then start the [daemon](daemon.md). An empty `pins[]` with no `bms.enabled` has nothing to run.
 
 ---
 
 ## Related
 
+- [daemon.md](daemon.md) — unified daemon quick start and systemd notes
 - [examples/README.md](examples/README.md) — full example index
-- [examples/maximum-gpio.md](examples/maximum-gpio.md) — same empty pool, documented
-- [examples/jbd-bms.md](examples/jbd-bms.md) — only implemented protocol bridge so far
+- [examples/relay-bank-16.md](examples/relay-bank-16.md) — 16 relay GPIO example (supported)
+- [examples/jbd-bms.md](examples/jbd-bms.md) — JBD BMS example (supported)
