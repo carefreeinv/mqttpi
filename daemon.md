@@ -129,6 +129,38 @@ Home Assistant discovery payloads for GPIO entities include `availability_topic`
 
 Library users get the same behavior from `MqttConnection(..., base_topic="mqttpi/node1")` (or `availability_topic=...`). Pass `will=False` to opt out; `payload_available` / `payload_not_available` override `online` / `offline`. Use `add_connect_callback()` to run code (re-subscribe, re-publish) after every reconnect.
 
+## Discovery topics and per-node ACLs
+
+By default discovery configs go to `homeassistant/<component>/<device.id>_<alias>/config` (unchanged). Set `mqtt.homeassistant.discovery_node_id` to use Home Assistant's node-id form instead:
+
+```yaml
+mqtt:
+  homeassistant:
+    discovery: true
+    discovery_node_id: true      # or an explicit id, e.g. "garage-2" (letters, digits, _ and -)
+```
+
+| Entity | Default topic | With `discovery_node_id: true` |
+|--------|---------------|--------------------------------|
+| GPIO switch `relay_1` on `node1` | `homeassistant/switch/node1_relay_1/config` | `homeassistant/switch/node1/relay_1/config` |
+| BMS sensor `soc` (BMS id `jbd_x`) on `node1` | `homeassistant/sensor/jbd_x_soc/config` | `homeassistant/sensor/node1/jbd_x_soc/config` |
+
+`unique_id` values do not change, so Home Assistant keeps entity ids and history.
+
+Every discovery topic of a node now sits under `homeassistant/+/<node_id>/`, so the broker can confine each node to its own topics. A Mosquitto ACL example, with one MQTT user per node, named after the node id:
+
+```text
+# /etc/mosquitto/acl  (mosquitto.conf: acl_file /etc/mosquitto/acl)
+pattern readwrite mqttpi/%u/#
+pattern write homeassistant/+/%u/#
+
+# Home Assistant's own user
+user homeassistant
+topic readwrite #
+```
+
+**Migrating an existing node:** when the node layout is on, mqttpi first publishes an empty retained payload to each entity's old flat-layout topic, then publishes the new config. This removes the old discovery entry before the new one appears, so Home Assistant never sees the same `unique_id` twice. The cleanup is a write outside the node's ACL scope, so either switch layouts **before** tightening the ACL, or clear the old topics as the admin user (`mosquitto_pub -r -n -t homeassistant/switch/node1_relay_1/config`). Set `discovery_clear_legacy: false` to skip the cleanup. Switching back to the flat layout does not clear the node-layout topics; remove those the same way.
+
 ## Command filters
 
 Applications that embed mqttpi can inspect every output command **before** any pin changes, and accept, modify, or reject it. This keeps local interlocks and safety limits in charge while mqttpi still handles MQTT, discovery, and GPIO. With no filter registered, behavior is unchanged.
