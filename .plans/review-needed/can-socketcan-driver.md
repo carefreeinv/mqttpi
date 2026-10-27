@@ -9,8 +9,8 @@
 
 ## Progress
 - [ ] Step 1: Decide scope with the owner (raw frames, RV-C decode, both)
-- [ ] Step 2: SocketCAN transport
-- [ ] Step 3: Frame-to-entity mapping from config
+- [x] Step 2: SocketCAN transport
+- [x] Step 3: Frame-to-entity mapping from config
 - [ ] Step 4: Docs and test on `vcan0`
 - [ ] Done when holds
 
@@ -56,3 +56,18 @@ Python per `.anchor/conventions.md`: small composable classes, Protocols or narr
 - `pytest -q` passes, including `vcan0` tests on Linux
 - `examples/can-rvc.yaml` (mapped subset) runs against `vcan0`
 - Docs and changelog updated
+
+## Handoff
+
+- **Implemented** (branch `feature/can-socketcan-driver`, stacked on `feature/mcp23017-expander-driver`):
+  - `mqttpi/can/transport.py`: stdlib `AF_CAN`, no new dependency. One reader thread per interface, with reconnect/backoff and bus-off logging.
+  - `mqttpi/can/mapping.py`: the `type: can_frame` sensor driver.
+  - `examples/can-frames.yaml` / `.md`, plus sections in daemon.md and config.example.md.
+- **Step 1 left open: the owner picks the scope.** Implemented the conservative default: generic, read-only raw-frame mapping (id or J1939-style PGN). RV-C decoding and transmit are not implemented; `can-rvc.yaml` is still a contract.
+- **Step 4 partly done.** The docs are written, and the unit tests use a fake transport. The `vcan0` round-trip test exists but was **skipped**: the dev box has no `vcan` kernel module.
+  - On a Pi: `sudo modprobe vcan && sudo ip link add dev vcan0 type vcan && sudo ip link set up vcan0 && pytest tests/test_can.py`.
+- **Bench:**
+  - MCP2515 HAT or USB adapter at 250 kbit/s, with `candump` alongside;
+  - check the decoded values against a known device;
+  - pull the termination or use a wrong bitrate, and confirm the bus-off log and recovery (`restart-ms 100`);
+  - `ip link set can0 down`/`up` while running, and confirm the reader reconnects.
