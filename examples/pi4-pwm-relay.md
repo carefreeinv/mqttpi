@@ -97,4 +97,4 @@ A: Use 50 Hz like [servo-controller.md](servo-controller.md), but prefer Pico W 
 
 ## Implementation status
 
-**Config-only** for Pi GPIO/PWM. Frequencies, duty, and HA **number**/**switch** discovery are defined but not implemented in Python yet. **BMS bridge** (`mqttpi.bms`) is the working HA/MQTT implementation on Pi today.
+**Implemented:** relays (`switch`) and `pwm_output` (`number`, 0–100 %) run in the daemon. PWM is software-timed by default. For accurate 25 kHz fan PWM on GPIO 12/13, set `pwm_mode: hardware` and enable `dtoverlay=pwm-2chan,pin=12,func=4,pin2=13,func2=4` ([daemon.md](../daemon.md#pwm-outputs)).

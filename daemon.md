@@ -88,6 +88,33 @@ Discovery: `homeassistant/sensor/<device.id>_<alias>/config` (or the node-id lay
 
 **Writing a driver:** implement `read() -> mqttpi.sensors.Reading` (values keyed by reading name, plus optional `quality`) and register a factory: `register_driver("mychip", lambda spec: MyChip(spec["address"]))`. Optional `default_readings` supplies units and classes, and optional `close()` runs on shutdown. Tests can use a fake driver in the same way; see `tests/test_sensors.py`.
 
+## PWM outputs
+
+A pin with `direction: pwm_output` becomes a Home Assistant `number` entity. Its state is on `{base_topic}/gpio/<alias>/state` and commands go to `{base_topic}/gpio/<alias>/set`. The payload is the duty in percent (`0`–`100`, decimals allowed), or `ON` (= `ha.max`) / `OFF` (= 0).
+
+```yaml
+pins:
+  - pin: 18
+    alias: fan
+    direction: pwm_output
+    frequency_hz: 1000        # default 1000
+    initial_duty: 0           # default 0 (safe start)
+    # invert: true            # active-low driver: logical 100 % = pin LOW
+    # pwm_mode: hardware      # default software; see below
+    # pwm_chip: 0             # hardware: /sys/class/pwm/pwmchip<N> (Pi 5: usually 2 — check ls /sys/class/pwm)
+    # pwm_channel: 0          # hardware: override the pin → channel map
+    ha: { name: "Fan", min: 0, max: 100, step: 1, unit_of_measurement: "%", icon: "mdi:fan" }
+```
+
+- **Clamping:** values above `ha.max` are clamped to `ha.max`. Values between 0 and `ha.min` go up to `ha.min`, which suits a motor's minimum speed. `0` (off) is always allowed.
+- **Command filters** see PWM commands too. `CommandRequest.value` and `current` are the duty as a float, and `states()` includes duties. `mutually_exclusive(...)` and `block_while(...)` treat any duty above 0 as ON. `clamp_duty(alias, low, high)` caps a channel.
+- **Shutdown:** every PWM output goes to 0 % before GPIO cleanup.
+- **Software PWM** (`pwm_mode: software`, the default) uses `RPi.GPIO.PWM`, or rpi-lgpio on a Pi 5. It works on any pin, but it is timed by a thread, so expect jitter. That is fine for LEDs, fans and DC motor speed, and not for servos. Above 1 kHz a warning is logged.
+- **Hardware PWM** (`pwm_mode: hardware`) writes to the kernel PWM sysfs (`/sys/class/pwm/pwmchip<N>`). It is accurate up to tens of kHz, but only on GPIO 12, 13, 18 and 19.
+  - Channel map: on a Pi Zero/3/4, 12/18 → channel 0 and 13/19 → channel 1; on a Pi 5, 12/13/18/19 → channels 0/1/2/3.
+  - You must route the pins with an overlay in `/boot/firmware/config.txt`, for example `dtoverlay=pwm-2chan,pin=12,func=4,pin2=13,func2=4`, then reboot.
+  - It is opt-in because a channel routed to a different pin than the one configured would drive the wrong pin. Board validation rejects `pwm_mode: hardware` on other pins.
+
 ## GPIO inputs and debounce
 
 Inputs are polled every 20 ms. A new reading is published once it has been stable for the pin's `debounce_ms` (default 50 ms). Contact bounce or a glitch shorter than that is ignored, and each bounce restarts the timer. Expect state changes in Home Assistant about `debounce_ms` after the physical edge. For limit switches and fast safety inputs, keep `debounce_ms` small (10–30 ms).

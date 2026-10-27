@@ -3,7 +3,10 @@
 from __future__ import annotations
 
 import logging
-from typing import Dict, Optional
+from pathlib import Path
+from typing import Any, Dict, Optional
+
+from mqttpi.gpio.pwm import MockPwm, PwmChannel, SoftwarePwm, SysfsPwm, hardware_channel
 
 log = logging.getLogger(__name__)
 
@@ -28,6 +31,14 @@ class GpioBackend:
     def read(self, pin: int) -> bool:
         raise NotImplementedError
 
+    def open_pwm(self, pin: int, frequency_hz: float, duty: float = 0.0, **options: Any) -> PwmChannel:
+        """Open a PWM channel on ``pin`` at ``duty`` percent.
+
+        Options: ``mode`` (``software`` default, ``hardware``), ``chip``,
+        ``channel``, ``board``.
+        """
+        raise NotImplementedError(f"{self.name} backend has no PWM support")
+
     def cleanup(self) -> None:
         pass
 
@@ -37,6 +48,7 @@ class MockGpioBackend(GpioBackend):
 
     def __init__(self) -> None:
         self._values: Dict[int, bool] = {}
+        self.pwm: Dict[int, MockPwm] = {}
 
     def setup_output(self, pin: int, initial: bool) -> None:
         self._values[pin] = initial
@@ -51,7 +63,15 @@ class MockGpioBackend(GpioBackend):
     def read(self, pin: int) -> bool:
         return self._values.get(pin, False)
 
+    def open_pwm(self, pin: int, frequency_hz: float, duty: float = 0.0, **options: Any) -> PwmChannel:
+        ch = MockPwm(pin, frequency_hz, duty)
+        ch.mode = options.get("mode", "software")  # type: ignore[attr-defined]
+        self.pwm[pin] = ch
+        return ch
+
     def cleanup(self) -> None:
+        for ch in self.pwm.values():
+            ch.stop()
         self._values.clear()
 
 
@@ -81,6 +101,19 @@ class RPiGpioBackend(GpioBackend):
 
     def read(self, pin: int) -> bool:
         return bool(self._gpio.input(pin))
+
+    def open_pwm(self, pin: int, frequency_hz: float, duty: float = 0.0, **options: Any) -> PwmChannel:
+        mode = options.get("mode") or "software"
+        if mode == "hardware":
+            channel, _note = hardware_channel(options.get("board"), pin, options.get("channel"))
+            return SysfsPwm(
+                int(options.get("chip", 0)),
+                channel,
+                frequency_hz,
+                duty,
+                root=Path(options.get("sysfs_root", "/sys/class/pwm")),
+            )
+        return SoftwarePwm(self._gpio, pin, frequency_hz, duty)
 
     def cleanup(self) -> None:
         self._gpio.cleanup()

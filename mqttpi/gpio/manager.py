@@ -11,8 +11,9 @@ from typing import Any, Dict, List, Optional
 from mqttpi.boards import validate_pins
 from mqttpi.gpio.backend import GpioBackend, create_backend
 from mqttpi.gpio.commands import CommandFilter, CommandRequest, run_filters
-from mqttpi.gpio.ha_mqtt import GpioMqttPublisher
+from mqttpi.gpio.ha_mqtt import GpioMqttPublisher, format_duty
 from mqttpi.gpio.pins import PinConfig, parse_pins
+from mqttpi.gpio.pwm import PwmChannel
 from mqttpi.mqtt.client import MqttConnection
 from mqttpi.mqtt.discovery import parse_discovery_layout
 
@@ -67,7 +68,11 @@ class GpioManager:
             self.backend_name,
             device_cfg.get("board", "unspecified"),
         )
+        self._board = device_cfg.get("board")
         self._outputs: Dict[str, PinConfig] = {}
+        self._pwm_pins: Dict[str, PinConfig] = {}
+        self._pwm: Dict[str, PwmChannel] = {}
+        self._pwm_state: Dict[str, float] = {}
         self._inputs: Dict[str, PinConfig] = {}
         self._output_state: Dict[str, bool] = {}
         self._input_state: Dict[str, bool] = {}
@@ -81,6 +86,8 @@ class GpioManager:
         for pin in self.pins:
             if pin.direction == "output":
                 self._outputs[pin.alias] = pin
+            elif pin.is_pwm:
+                self._pwm_pins[pin.alias] = pin
             else:
                 self._inputs[pin.alias] = pin
 
@@ -90,12 +97,25 @@ class GpioManager:
                 # invert: true → active-low output (logical ON drives the pin LOW).
                 self.backend.setup_output(pin.pin, pin.initial != pin.invert)
                 self._output_state[pin.alias] = pin.initial
+            elif pin.is_pwm:
+                self._pwm[pin.alias] = self.backend.open_pwm(
+                    pin.pin,
+                    pin.frequency_hz,
+                    self._hw_duty(pin, pin.initial_duty),
+                    mode=pin.pwm_mode,
+                    chip=pin.pwm_chip,
+                    channel=pin.pwm_channel,
+                    board=self._board,
+                )
+                self._pwm_state[pin.alias] = pin.initial_duty
+                log.info("PWM %s on GPIO%d: %g Hz, %s", pin.alias, pin.pin, pin.frequency_hz,
+                         getattr(self._pwm[pin.alias], "kind", pin.pwm_mode))
             else:
                 self.backend.setup_input(pin.pin, pin.pull)
                 raw = self.backend.read(pin.pin)
                 self._input_state[pin.alias] = self._logical_input(pin, raw)
 
-        for alias in self._outputs:
+        for alias in list(self._outputs) + list(self._pwm_pins):
             topic = f"{self.publisher.base_topic}/gpio/{alias}/set"
             self.mqtt.subscribe(topic)  # re-issued by MqttConnection on reconnect
 
@@ -115,8 +135,9 @@ class GpioManager:
             self._input_thread.start()
 
         log.info(
-            "GPIO started: %d outputs, %d inputs",
+            "GPIO started: %d outputs, %d PWM, %d inputs",
             len(self._outputs),
+            len(self._pwm_pins),
             len(self._inputs),
         )
 
@@ -136,12 +157,19 @@ class GpioManager:
                 self.publisher.publish_state(alias, on)
             for alias, on in list(self._input_state.items()):
                 self.publisher.publish_state(alias, on)
+            for alias, duty in list(self._pwm_state.items()):
+                self.publisher.publish_duty(alias, duty)
 
     def handle_mqtt_message(self, topic: str, payload: str) -> None:
         prefix = f"{self.publisher.base_topic}/gpio/"
         if not topic.startswith(prefix) or not topic.endswith("/set"):
             return
         alias = topic[len(prefix) : -4]
+        if alias in self._pwm_pins:
+            duty = self._parse_duty(alias, payload)
+            if duty is not None:
+                self._apply_duty(alias, duty, source=topic, payload=payload)
+            return
         pin = self._outputs.get(alias)
         if pin is None:
             return
@@ -165,9 +193,9 @@ class GpioManager:
     def command_filters(self) -> List[CommandFilter]:
         return list(self._filters)
 
-    def states(self) -> Dict[str, bool]:
-        """Snapshot of every output and input state, keyed by alias."""
-        return {**self._input_state, **self._output_state}
+    def states(self) -> Dict[str, Any]:
+        """Snapshot of every output, PWM duty (percent) and input state, keyed by alias."""
+        return {**self._input_state, **self._output_state, **self._pwm_state}
 
     def request_output(self, alias: str, on: bool, source: str = "api") -> bool:
         """Set an output from code, through the same filters as MQTT commands.
@@ -218,8 +246,88 @@ class GpioManager:
         log.debug("Set %s → %s (%s)", alias, "ON" if on else "OFF", source)
         return on
 
+    # --- PWM ------------------------------------------------------------
+
+    def request_duty(self, alias: str, duty: float, source: str = "api") -> float:
+        """Set a PWM duty (percent) from code, through the command filters.
+
+        Returns the resulting duty. Raises ``KeyError`` for an unknown alias.
+        """
+        if alias not in self._pwm_pins:
+            raise KeyError(f"Unknown PWM alias {alias!r}")
+        return self._apply_duty(alias, float(duty), source=source)
+
+    def duty(self, alias: str) -> float:
+        return self._pwm_state[alias]
+
+    def _parse_duty(self, alias: str, payload: str) -> Optional[float]:
+        pin = self._pwm_pins[alias]
+        text = payload.strip()
+        if text == self.publisher.payload_on:
+            return pin.ha_max
+        if text == self.publisher.payload_off:
+            return 0.0
+        try:
+            value = float(text)
+        except ValueError:
+            log.warning("Ignoring non-numeric PWM payload %r for %s", payload, alias)
+            return None
+        if value != value or value in (float("inf"), float("-inf")):
+            log.warning("Ignoring non-finite PWM payload %r for %s", payload, alias)
+            return None
+        return value
+
+    @staticmethod
+    def _hw_duty(pin: PinConfig, duty: float) -> float:
+        # invert: true → active-low (logical 100 % = pin LOW all the time).
+        return 100.0 - duty if pin.invert else duty
+
+    def _apply_duty(self, alias: str, duty: float, source: str, payload: Optional[str] = None) -> float:
+        pin = self._pwm_pins[alias]
+        with self._command_lock:
+            current = self._pwm_state.get(alias, 0.0)
+            clamped = max(pin.ha_min if duty > 0 else 0.0, min(pin.ha_max, duty))
+            if clamped != duty:
+                log.info("PWM %s: %g clamped to %g (range %g-%g)", alias, duty, clamped, pin.ha_min, pin.ha_max)
+            duty = clamped
+            if self._filters:
+                request = CommandRequest(
+                    alias=alias,
+                    value=duty,
+                    current=current,
+                    source=source,
+                    payload=payload,
+                    states=MappingProxyType(self.states()),
+                )
+                outcome = run_filters(self._filters, request)
+                if not outcome.accepted:
+                    log.info("Command %s → %s rejected: %s", alias, format_duty(duty),
+                             "; ".join(outcome.reasons) or "rejected")
+                    self.publisher.publish_duty(alias, current)
+                    return current
+                try:
+                    new = float(outcome.value)
+                except (TypeError, ValueError):
+                    log.error("Command filter returned non-numeric duty %r for %s; rejecting", outcome.value, alias)
+                    self.publisher.publish_duty(alias, current)
+                    return current
+                if new != duty:
+                    log.info("Command %s → %s modified to %s: %s", alias, format_duty(duty), format_duty(new),
+                             "; ".join(outcome.reasons) or "modified")
+                duty = max(0.0, min(pin.ha_max, new))
+            self._pwm[alias].set_duty(self._hw_duty(pin, duty))
+            self._pwm_state[alias] = duty
+        self.publisher.publish_duty(alias, duty)
+        log.debug("Set %s → %s%% (%s)", alias, format_duty(duty), source)
+        return duty
+
     def stop(self) -> None:
         self._stop.set()
+        for alias, channel in list(self._pwm.items()):
+            try:
+                channel.stop()  # PWM pins go to 0 % before GPIO cleanup
+            except Exception:  # pragma: no cover - best effort on shutdown
+                log.debug("PWM stop failed for %s", alias, exc_info=True)
         if self._input_thread is not None:
             self._input_thread.join(timeout=2)
         self.backend.cleanup()

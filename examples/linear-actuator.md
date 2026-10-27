@@ -7,6 +7,8 @@ A reversible DC **linear actuator** (or any reversible motor) driven by **two re
 - `actuator_extend` and `actuator_retract` are never ON together (a second direction command is rejected until the first is switched OFF);
 - extending is refused while `limit_extended` is active, retracting while `limit_retracted` is active.
 
+For speed control with a dual-PWM H-bridge, see [linear-actuator-pwm.md](linear-actuator-pwm.md).
+
 ## Quick start
 
 ```bash
