@@ -46,6 +46,17 @@ cd mqttpi
 pip3 install -r requirements.txt
 ```
 
+**Or install as a package** (Python 3.9+; adds the `mqttpi` and `mqttpi-bms` commands):
+
+```bash
+python3 -m venv --system-site-packages ~/.venvs/mqttpi
+~/.venvs/mqttpi/bin/pip install "mqttpi @ git+https://github.com/carefreeinv/mqttpi"
+# pin a release once it is tagged, e.g. ...mqttpi@v0.2.0
+~/.venvs/mqttpi/bin/mqttpi -c config.yaml -v
+```
+
+The clone-based install and the systemd units (which expect a clone in `~/mqttpi`) keep working unchanged.
+
 ### 2. Pick an example
 
 ```bash
@@ -166,6 +177,22 @@ pip3 install -r requirements-docs.txt
 python3 scripts/stage_docs.py
 mkdocs serve
 ```
+
+```bash
+# Tests (integration tests use mosquitto if on PATH, else the amqtt broker from requirements-dev.txt)
+python3 -m venv .venv && .venv/bin/pip install -r requirements-dev.txt
+.venv/bin/python -m pytest -q
+
+# Wheel
+.venv/bin/pip install build && .venv/bin/python -m build   # dist/mqttpi-<version>-py3-none-any.whl
+```
+
+### Release checklist
+
+1. Bump `__version__` in `mqttpi/__init__.py` (the only place the version lives; `pyproject.toml` reads it).
+2. In `CHANGELOG.md`, rename `[Unreleased]` to `[x.y.z] - YYYY-MM-DD`, add a fresh `[Unreleased]`, and update the compare links at the bottom.
+3. `pytest -q` and `python -m build` pass; merge to `main`.
+4. Tag the merge commit and push the tag: `git tag -a vx.y.z -m "mqttpi x.y.z" && git push origin vx.y.z`.
 
 See [CHANGELOG.md](CHANGELOG.md) for release history.
 
