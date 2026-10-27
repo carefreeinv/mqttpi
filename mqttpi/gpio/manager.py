@@ -46,7 +46,19 @@ class GpioManager:
             manufacturer=str(ha_cfg.get("manufacturer", "mqttpi")),
             model=str(ha_cfg.get("model", device_cfg.get("board", ""))),
         )
-        self.backend: GpioBackend = create_backend(force_mock=mock_gpio)
+        gpio_cfg = cfg.get("gpio") or {}
+        backend_choice = gpio_cfg.get("backend") if isinstance(gpio_cfg, dict) else None
+        self.backend: GpioBackend = create_backend(
+            force_mock=mock_gpio,
+            backend=str(backend_choice) if backend_choice is not None else None,
+        )
+        #: Active backend name ("rpi" or "mock") for library users and logs.
+        self.backend_name: str = self.backend.name
+        log.info(
+            "GPIO backend: %s (board: %s)",
+            self.backend_name,
+            device_cfg.get("board", "unspecified"),
+        )
         self._outputs: Dict[str, PinConfig] = {}
         self._inputs: Dict[str, PinConfig] = {}
         self._output_state: Dict[str, bool] = {}
