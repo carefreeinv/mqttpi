@@ -1,0 +1,61 @@
+# Linear actuator (reversible DC motor) — Raspberry Pi, two direction relays
+# plus optional end-stop inputs. Pair with examples/linear_actuator_interlock.py
+# so "extend" and "retract" can never be ON together.
+#
+#   cp examples/linear-actuator.yaml config.yaml
+#   python3 examples/linear_actuator_interlock.py -c config.yaml -v
+
+device:
+  id: actuator-01
+  board: pi4
+  ha:
+    name: "Linear Actuator"
+
+mqtt:
+  host: 192.168.1.50
+  port: 1883
+  base_topic: mqttpi/actuator-01
+  client_id: mqttpi-actuator-01
+  homeassistant:
+    discovery: true
+    discovery_prefix: homeassistant
+  payload_on: "ON"
+  payload_off: "OFF"
+  retain: true
+  qos: 1
+
+# gpio:
+#   backend: mock        # test without hardware (same as --mock-gpio)
+
+pins:
+  - pin: 17
+    alias: actuator_extend
+    direction: output
+    initial: false
+    # invert: true       # uncomment for active-low relay boards (most opto boards)
+    ha: { name: "Actuator Extend", icon: "mdi:arrow-expand-horizontal" }
+
+  - pin: 27
+    alias: actuator_retract
+    direction: output
+    initial: false
+    # invert: true
+    ha: { name: "Actuator Retract", icon: "mdi:arrow-collapse-horizontal" }
+
+  # End-stop / limit switches (optional). Wire switch to GND, pull-up enabled,
+  # invert so "ON" means "limit reached".
+  - pin: 22
+    alias: limit_extended
+    direction: input
+    pull: up
+    invert: true
+    debounce_ms: 30
+    ha: { name: "Limit Extended" }
+
+  - pin: 23
+    alias: limit_retracted
+    direction: input
+    pull: up
+    invert: true
+    debounce_ms: 30
+    ha: { name: "Limit Retracted" }
