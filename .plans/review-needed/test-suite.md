@@ -8,11 +8,11 @@
 - **Depends on:** mqtt-availability-lwt
 
 ## Progress
-- [ ] Step 1: Unit tests for config loading and pin parsing
-- [ ] Step 2: Unit tests for GPIO manager and HA discovery payloads
-- [ ] Step 3: Unit tests for the JBD BMS protocol parser
-- [ ] Step 4: Daemon smoke test with the mock backend
-- [ ] Step 5: CI workflow
+- [x] Step 1: Unit tests for config loading and pin parsing
+- [x] Step 2: Unit tests for GPIO manager and HA discovery payloads
+- [x] Step 3: Unit tests for the JBD BMS protocol parser
+- [x] Step 4: Daemon smoke test with the mock backend
+- [x] Step 5: CI workflow
 - [ ] Done when holds
 
 ## Goal
@@ -61,3 +61,27 @@ Python per `.anchor/conventions.md`: small composable classes, Protocols or narr
 - `pytest -q` passes locally and in the new CI workflow
 - Coverage report shows every module under `mqttpi/` exercised
 - No hardware or broker needed for the unit suite
+
+## Handoff
+- Branch `feature/test-suite`, stacked on `feature/ha-discovery-node-id`. It only needs the harness from #1; it is stacked so the suite covers the stacked code.
+- Done (all six table steps; Progress steps 1–5):
+  - `tests/test_config.py` (deep-merge, empty/missing files, YAML errors, the repo example merged with `secrets.example.yaml`).
+  - `tests/test_pins.py`.
+  - `tests/test_gpio_manager.py` (outputs, custom payloads, invert, input pull/invert, change publishing, debounce chatter, reconnect re-announce, discovery off, cleanup).
+  - `tests/test_discovery.py` with snapshots in `tests/snapshots/`, regenerated with `MQTTPI_UPDATE_SNAPSHOTS=1`.
+  - `tests/test_jbd_protocol.py`, using `tests/data/jbd_doc_frames.txt` (frames from the public JBD protocol V4 document) and the synthetic frame builder `tests/jbd_frames.py`, plus the UART client against a fake serial port.
+  - `tests/test_bms_bridge.py`.
+  - `tests/test_daemon_smoke.py` (threaded run/stop, implemented examples load, every example YAML parses, `python -m` entry points).
+  - `.github/workflows/tests.yml`: ruff, unit suite on 3.9/3.11/3.13, and an optional mosquitto integration job (`continue-on-error`).
+  - Minimal `[tool.ruff]` (E, F; line length 120) and `pytest-cov` in the dev extras.
+- Verified locally:
+  - Python 3.13: 170 passed, 3 xfailed.
+  - Unit suite alone: about 5 s.
+  - Python 3.9: the unit suite passes.
+  - `ruff check .` is clean.
+  - Coverage is 96% with every `mqttpi/` module exercised (lowest: `gpio/backend.py` at 78%, which is the RPi.GPIO-only paths).
+- **Not ticked: "Done when"** needs the new workflow green on GitHub. It runs on this push; check the Actions tab.
+- Known bugs found, kept as strict xfails (no behavior change in this plan) and fixed in a follow-up PR:
+  1. An input change that settles inside the debounce window is never published.
+  2. The JBD read request checksum includes the 0xA5 byte (it sends `DD A5 03 00 FF 58 77`; the documented frame is `DD A5 03 00 FF FD 77`).
+  3. JBD balancing bits are mapped in reverse.
