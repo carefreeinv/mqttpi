@@ -143,7 +143,7 @@ def test_documented_example_contract_parses(fake_type) -> None:
 
 
 #: Examples whose sensors have built-in drivers (the rest document contracts ahead of drivers).
-EXAMPLES_WITH_DRIVERS = {"sensors-i2c-onewire.yaml", "power-monitor.yaml"}
+EXAMPLES_WITH_DRIVERS = {"sensors-i2c-onewire.yaml", "power-monitor.yaml", "can-frames.yaml"}
 
 
 def test_examples_without_drivers_do_not_enable_sensors() -> None:

@@ -140,9 +140,10 @@ A: MCP2515 is simpler to bring up. can2040 saves the SPI controller chip — see
 | Component | Status |
 |-----------|--------|
 | `examples/can-rvc.yaml` | **Config contract** |
+| SocketCAN listen + generic frame mapping (`type: can_frame`) | **Implemented**, read-only. See [can-frames.md](can-frames.md) |
 | RV-C PGN decode (listen) | **Not implemented** |
 | RV-C command encode (write) | **Not implemented** |
 | J1939 address claim | **Not implemented** |
 | HA discovery (sensor/number/select) | **Not implemented** |
 
-**Config contract only.** RV-C is not implemented in firmware yet; YAML documents the intended MQTT and HA mapping for implementers.
+**Config contract only.** RV-C decoding is not implemented yet; the YAML documents the intended MQTT and HA mapping for implementers. To read specific DGNs today, map them with `type: can_frame` sensors (`pgn:` + `source_address:` + `match:` on the instance byte).

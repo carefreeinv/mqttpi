@@ -7,6 +7,7 @@ def register_builtin_drivers() -> None:
     from mqttpi.sensors.drivers.cpu_temperature import CpuTemperatureDriver
     from mqttpi.sensors.drivers.ds18b20 import Ds18b20Driver
     from mqttpi.sensors.drivers.i2c_climate import Bme280Driver, Sht3xDriver, Sht4xDriver
+    from mqttpi.can.mapping import CanFrameDriver
     from mqttpi.sensors.registry import register_driver
 
     register_driver("cpu_temperature", CpuTemperatureDriver.from_config, replace=True)
@@ -17,3 +18,4 @@ def register_builtin_drivers() -> None:
         register_driver(name, Sht3xDriver.from_config, replace=True)
     for name in ("sht4x", "sht40", "sht41", "sht45"):
         register_driver(name, Sht4xDriver.from_config, replace=True)
+    register_driver("can_frame", CanFrameDriver.from_config, replace=True)
