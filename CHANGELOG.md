@@ -8,6 +8,12 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- **MQTT Last Will** — `MqttConnection` registers a retained `offline` will on `{base_topic}/status` before connecting, so a crashed or disconnected node is marked offline by the broker; `online` is re-published after every successful (re)connect ([daemon.md](daemon.md#availability-and-last-will))
+- `mqtt.keepalive` config key (default `60`, unchanged)
+- `MqttConnection` options `base_topic`, `availability_topic`, `will`, `payload_available`, `payload_not_available`, `keepalive`, plus `add_connect_callback()` and `is_connected`
+- GPIO switch / binary_sensor discovery payloads include `availability_topic`
+- Test harness: `requirements-dev.txt`, `pytest.ini`, fake paho client (`tests/`), broker integration tests (`tests/integration/`, use `mosquitto` or `amqtt`, skipped if neither is installed)
+
 - **Mermaid diagrams** — flow and wiring docs converted from ASCII; MkDocs loads Mermaid 11 via `extra_javascript` + `site_assets/mermaid-init.js` (theme-aware render on instant navigation)
 - **Deployment guides** for [`house`](deployments/house.md), [`store`](deployments/store.md), and [`makerspace`](deployments/makerspace.md) site templates
 - **Makerspace site templates** (one Pico W per shop zone):
@@ -21,6 +27,9 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - MkDocs **site logo** — custom `site_assets/logo.svg` (π mark with MQTT signal arcs and GPIO pin pads)
 
 ### Changed
+
+- Availability messages on `{base_topic}/status` are always retained (previously followed `mqtt.retain`)
+- Daemon availability topic now defaults to `mqttpi/{device.id}/status` when `mqtt.base_topic` is unset, matching the documented topic root and the GPIO topics (previously `mqttpi/status`)
 
 - [`mkdocs.yml`](mkdocs.yml) — `pymdownx.superfences` custom `mermaid` fence; Mermaid.js CDN + init script
 - [`scripts/stage_docs.py`](scripts/stage_docs.py) — stage `mermaid-init.js` into docs site

@@ -94,7 +94,7 @@ Enable the **MQTT** integration with **discovery** enabled. Entities appear afte
 {base_topic}/gpio/{alias}/state    ← inputs, sensors
 {base_topic}/gpio/{alias}/set      ← outputs, PWM commands
 {base_topic}/bms/...               ← JBD BMS (when enabled)
-{base_topic}/status                ← online / offline
+{base_topic}/status                ← online / offline (retained; broker Last Will on crash)
 ```
 
 ### Pico W pin budget

@@ -60,6 +60,9 @@ class GpioMqttPublisher:
     def _state_topic(self, alias: str) -> str:
         return f"{self.base_topic}/gpio/{alias}/state"
 
+    def _availability_topic(self) -> str:
+        return f"{self.base_topic}/status"
+
     def _command_topic(self, alias: str) -> str:
         return f"{self.base_topic}/gpio/{alias}/set"
 
@@ -74,6 +77,7 @@ class GpioMqttPublisher:
             "state_topic": self._state_topic(pin.alias),
             "payload_on": self.payload_on,
             "payload_off": self.payload_off,
+            "availability_topic": self._availability_topic(),
             "device": device,
         }
         if pin.ha_icon:
@@ -87,6 +91,7 @@ class GpioMqttPublisher:
             "state_topic": self._state_topic(pin.alias),
             "payload_on": self.payload_on,
             "payload_off": self.payload_off,
+            "availability_topic": self._availability_topic(),
             "device": device,
         }
         if pin.ha_device_class:

@@ -32,6 +32,7 @@ mqtt:
   host: 192.168.1.50
   port: 1883
   tls: false
+  keepalive: 60          # seconds; broker fires the offline Last Will after ~1.5x
   base_topic: mqttpi/change-me-unique-id
   client_id: mqttpi-change-me-unique-id
   homeassistant:
