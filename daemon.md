@@ -218,10 +218,14 @@ New installs should prefer `python3 -m mqttpi` so GPIO and BMS share one process
 
 ## Board notes
 
-| `device.board` | GPIO runtime |
-|----------------|--------------|
-| `pi4`, `pi5` | RPi.GPIO (BCM pin numbers from `pins[].pin`) |
-| `picow` | Same Linux daemon for bring-up; production Pico W nodes will use a future MicroPython firmware port |
+| `device.board` | GPIO (validated) | Hardware PWM | ADC | GPIO runtime / notes |
+|----------------|------------------|--------------|-----|----------------------|
+| `pi3`, `pi4` | BCM 0–27 | 12, 13, 18, 19 | none | RPi.GPIO (BCM pin numbers from `pins[].pin`) |
+| `pi5` | BCM 0–27 | 12, 13, 18, 19 | none | Install `rpi-lgpio` (RPi.GPIO-compatible); classic RPi.GPIO does not support the Pi 5 |
+| `pizero` (`pizero2w`, `pizero_w`, `zero2w`) | BCM 0–27 | 12, 13, 18, 19 | none | RPi.GPIO; Zero W is single-core ARMv6, Wi-Fi 2.4 GHz only — see [pizero-relays](examples/pizero-relays.md) |
+| `picow` (`pico_w`) | GP0–22, 26–28 | all GPIO | GP26–28 | Same Linux daemon for bring-up; production Pico W nodes will use a future MicroPython firmware port |
+
+At startup the GPIO manager checks `pins[]` against the board profile ([`mqttpi/boards.py`](mqttpi/boards.py)) and refuses to start, listing every problem, when a pin does not exist on the board, is used twice, or is claimed by an enabled bus (any pin setting under an enabled `buses.*` entry, or GPIO 14/15 when `bms.port` is `/dev/serial0`). It logs a warning for GPIO 0/1 (HAT ID EEPROM), `analog` pins without an ADC, and `pwm` pins without hardware PWM. A missing or unknown `device.board` skips validation (warning only), so existing configs keep working.
 
 The [`relay-bank-16`](examples/relay-bank-16.md) example targets Pico W pin numbering (GP0–GP15). On a Raspberry Pi, use BCM pins that match your wiring or adapt the config.
 
