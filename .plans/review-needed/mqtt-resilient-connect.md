@@ -8,11 +8,11 @@
 - **Depends on:** mqtt-availability-lwt
 
 ## Progress
-- [ ] Step 1: Non-blocking first connect with bounded backoff in `MqttConnection`
-- [ ] Step 2: Daemon starts subsystems without waiting for the broker
-- [ ] Step 3: Publish behavior while disconnected
-- [ ] Step 4: Docs
-- [ ] Step 5: Integration test: broker down at boot, then up
+- [x] Step 1: Non-blocking first connect with bounded backoff in `MqttConnection`
+- [x] Step 2: Daemon starts subsystems without waiting for the broker
+- [x] Step 3: Publish behavior while disconnected
+- [x] Step 4: Docs
+- [x] Step 5: Integration test: broker down at boot, then up
 - [ ] Done when holds
 
 ## Goal
@@ -62,3 +62,13 @@ Python per `.anchor/conventions.md`: small composable classes, Protocols or narr
 - `pytest -q` passes
 - Integration test: daemon survives broker-down boot and broker restart, and publishes availability and discovery after connecting
 - Docs and changelog updated; docs build passes
+
+## Handoff
+- Branch `feature/mqtt-resilient-connect`, stacked on `feature/mqtt-availability-lwt`.
+- `MqttConnection.connect()` uses `connect_async` + `loop_start` + `reconnect_delay_set(reconnect_min_s, reconnect_max_s)` + `max_queued_messages_set`; `wait_connected(timeout)` added; config errors raise `ValueError` up front.
+- Subscriptions are remembered and re-issued on every connect; `GpioManager` registers a connect callback that re-publishes discovery and all pin states.
+- One warning per outage, plus one reminder after 10 failed attempts; reconnect logged at INFO.
+- `BmsMqttPublisher.connect()` non-blocking by default; discovery re-sent after reconnect; `bridge --once` stays blocking.
+- Also fixed: GPIO discovery skipped when `mqtt.homeassistant` was omitted.
+- Integration test starts the broker ~4 s after the daemon (not 30 s) with `reconnect_max_s: 2` to keep CI fast; the behavior is the same.
+- Verified: `pytest -q` 43 passed (amqtt broker); docs build OK.
