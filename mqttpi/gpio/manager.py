@@ -11,6 +11,7 @@ from typing import Any, Dict, List, Optional
 from mqttpi.boards import validate_pins
 from mqttpi.gpio.backend import GpioBackend, create_backend
 from mqttpi.gpio.commands import CommandFilter, CommandRequest, run_filters
+from mqttpi.gpio.mcp23017 import build_expander_backend
 from mqttpi.gpio.ha_mqtt import GpioMqttPublisher, format_duty
 from mqttpi.gpio.pins import PinConfig, parse_pins
 from mqttpi.gpio.pwm import PwmChannel
@@ -61,7 +62,9 @@ class GpioManager:
             force_mock=mock_gpio,
             backend=str(backend_choice) if backend_choice is not None else None,
         )
-        #: Active backend name ("rpi" or "mock") for library users and logs.
+        # Pins on I2C expanders (expanders.mcp23017) go through a routing backend.
+        self.backend = build_expander_backend(cfg, self.backend, mock=self.backend.name == "mock")
+        #: Active backend name ("rpi", "mock", "rpi+mcp23017", ...) for library users and logs.
         self.backend_name: str = self.backend.name
         log.info(
             "GPIO backend: %s (board: %s)",
@@ -108,11 +111,15 @@ class GpioManager:
                     board=self._board,
                 )
                 self._pwm_state[pin.alias] = pin.initial_duty
-                log.info("PWM %s on GPIO%d: %g Hz, %s", pin.alias, pin.pin, pin.frequency_hz,
+                log.info("PWM %s on GPIO%s: %g Hz, %s", pin.alias, pin.pin, pin.frequency_hz,
                          getattr(self._pwm[pin.alias], "kind", pin.pwm_mode))
             else:
                 self.backend.setup_input(pin.pin, pin.pull)
-                raw = self.backend.read(pin.pin)
+                try:
+                    raw = self.backend.read(pin.pin)
+                except OSError as exc:  # expander absent at boot; the poll loop retries
+                    log.warning("Input %s initial read failed: %s", pin.alias, exc)
+                    raw = pin.invert
                 self._input_state[pin.alias] = self._logical_input(pin, raw)
 
         for alias in list(self._outputs) + list(self._pwm_pins):
@@ -240,7 +247,12 @@ class GpioManager:
                     )
                 on = bool(outcome.value)
 
-            self.backend.write(pin.pin, on != pin.invert)
+            try:
+                self.backend.write(pin.pin, on != pin.invert)
+            except OSError as exc:  # e.g. I2C expander NACK; state unchanged
+                log.error("Set %s → %s failed: %s", alias, "ON" if on else "OFF", exc)
+                self.publisher.publish_state(alias, current)
+                return current
             self._output_state[alias] = on
         self.publisher.publish_state(alias, on)
         log.debug("Set %s → %s (%s)", alias, "ON" if on else "OFF", source)
@@ -346,11 +358,21 @@ class GpioManager:
         stable: Dict[str, bool] = dict(self._input_state)
         candidate: Dict[str, bool] = dict(stable)
         since: Dict[str, float] = {alias: time.monotonic() for alias in self._inputs}
+        read_errors: set = set()
 
         while not self._stop.is_set():
             now = time.monotonic()
             for alias, pin in self._inputs.items():
-                raw = self.backend.read(pin.pin)
+                try:
+                    raw = self.backend.read(pin.pin)
+                except OSError as exc:  # I2C expander unreachable: keep last state, retry
+                    if alias not in read_errors:
+                        log.warning("Input %s read failed: %s (retrying)", alias, exc)
+                    read_errors.add(alias)
+                    continue
+                if alias in read_errors:
+                    read_errors.discard(alias)
+                    log.info("Input %s readable again", alias)
                 logical = self._logical_input(pin, raw)
                 debounce_s = pin.debounce_ms / 1000.0
 
