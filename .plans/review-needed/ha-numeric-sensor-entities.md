@@ -8,11 +8,11 @@
 - **Depends on:** mqtt-availability-lwt
 
 ## Progress
-- [ ] Step 1: Generic numeric sensor publisher with discovery
-- [ ] Step 2: Sensor driver interface and polling scheduler
-- [ ] Step 3: Wire into the daemon
-- [ ] Step 4: Docs
-- [ ] Done when holds
+- [x] Step 1: Generic numeric sensor publisher with discovery
+- [x] Step 2: Sensor driver interface and polling scheduler
+- [x] Step 3: Wire into the daemon
+- [x] Step 4: Docs
+- [x] Done when holds
 
 ## Goal
 mqttpi has one generic way to publish numeric readings as Home Assistant `sensor` entities (state topic, unit, device_class, state_class, availability), plus a small driver interface and polling scheduler, so every sensor driver (1-Wire, I2C, ADC, CAN-derived values) reuses it instead of each inventing topics.
@@ -57,3 +57,21 @@ Python Protocol `SensorDriver` with `read() -> Reading`; registry keyed by confi
 - `pytest -q` passes
 - A fake sensor appears in Home Assistant discovery format with unit and device class (snapshot)
 - Docs and changelog updated
+
+## Handoff
+- Implemented on branch `feature/ha-numeric-sensor-entities`, stacked on `feature/pi-zero-w-board`.
+- **Step 1:** `mqttpi/sensors/ha_mqtt.py` `NumericSensorPublisher`.
+  - Topics: `{base_topic}/sensors/<alias>/state`, `/attributes` (JSON timestamp + quality) and `/availability`. The topic layout follows the documented examples (`{base_topic}/sensors/{alias}/state`).
+  - Discovery has unit, device_class, state_class, suggested_display_precision and json_attributes_topic.
+  - Availability is [node status, entity availability] with `availability_mode: all`.
+  - Respects the node-id discovery layout.
+  - Snapshot: `tests/snapshots/sensor_discovery.json`.
+- **Step 2:** `Reading`, the `SensorDriver` Protocol, the registry (`register_driver`) and `SensorScheduler`.
+  - One scheduler thread, with reads in a worker pool.
+  - On timeout the late result is discarded, and the sensor is not re-polled while its read is hung.
+  - Staleness marks the entities offline; the next good read brings them back online.
+- **Step 3:** the daemon starts `SensorSubsystem` when `sensors` lists a type with a registered driver.
+  - Sensor types without a driver are skipped with a warning, so the existing examples (`mpu6050`, `vl53l0x`, …) keep loading and their subsystems are unchanged.
+  - Built-in `cpu_temperature` driver.
+- **Step 4:** daemon.md "Sensors (numeric readings)", config.example.md/.yaml, CHANGELOG.
+- **Verified:** 208 passed (Python 3.13). The sensor and daemon smoke tests also pass on Python 3.9. `ruff` is clean and the docs build passes.
