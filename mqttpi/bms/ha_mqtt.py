@@ -33,7 +33,8 @@ class BmsMqttPublisher:
       mark the whole node (GPIO entities) unavailable. ``connect()`` /
       ``disconnect()`` are no-ops; the daemon owns the connection.
     * **Standalone** (``mqttpi-bms``): pass broker settings (or a connection
-      with ``owns_connection=True``); the publisher owns an :class:`MqttConnection` with Last Will and background reconnect, and
+      with ``owns_connection=True``); the publisher owns an
+      :class:`MqttConnection` with Last Will and background reconnect, and
       BMS health is the node availability ``{base}/status`` as before.
     """
 
