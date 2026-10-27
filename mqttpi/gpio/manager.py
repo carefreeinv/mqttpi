@@ -53,6 +53,8 @@ class GpioManager:
         self._input_state: Dict[str, bool] = {}
         self._stop = threading.Event()
         self._input_thread: Optional[threading.Thread] = None
+        self._started = False
+        self._announce_lock = threading.Lock()
 
         for pin in self.pins:
             if pin.direction == "output":
@@ -70,18 +72,16 @@ class GpioManager:
                 raw = self.backend.read(pin.pin)
                 self._input_state[pin.alias] = self._logical_input(pin, raw)
 
-        if mqtt_cfg_discovery := self.cfg.get("mqtt", {}).get("homeassistant", {}):
-            if mqtt_cfg_discovery.get("discovery", True):
-                self.publisher.publish_discovery(self.pins)
-
-        for alias, on in self._output_state.items():
-            self.publisher.publish_state(alias, on)
-        for alias, on in self._input_state.items():
-            self.publisher.publish_state(alias, on)
-
         for alias in self._outputs:
             topic = f"{self.publisher.base_topic}/gpio/{alias}/set"
-            self.mqtt.subscribe(topic)
+            self.mqtt.subscribe(topic)  # re-issued by MqttConnection on reconnect
+
+        self._started = True
+        # Discovery and state are (re)published on every broker connect, so a
+        # broker restarted without persistence gets them again.
+        self.mqtt.add_connect_callback(self.announce)
+        if self.mqtt.is_connected:
+            self.announce()
 
         if self._inputs:
             self._input_thread = threading.Thread(
@@ -96,6 +96,23 @@ class GpioManager:
             len(self._outputs),
             len(self._inputs),
         )
+
+    @property
+    def discovery_enabled(self) -> bool:
+        ha_cfg = self.cfg.get("mqtt", {}).get("homeassistant") or {}
+        return bool(ha_cfg.get("discovery", True))
+
+    def announce(self) -> None:
+        """Publish HA discovery (if enabled) and every current pin state."""
+        if not self._started:
+            return
+        with self._announce_lock:
+            if self.discovery_enabled:
+                self.publisher.publish_discovery(self.pins)
+            for alias, on in list(self._output_state.items()):
+                self.publisher.publish_state(alias, on)
+            for alias, on in list(self._input_state.items()):
+                self.publisher.publish_state(alias, on)
 
     def handle_mqtt_message(self, topic: str, payload: str) -> None:
         prefix = f"{self.publisher.base_topic}/gpio/"

@@ -50,6 +50,17 @@ flowchart TD
     loop --> status["Publish status online/offline"]
 ```
 
+## Startup and reconnect
+
+The daemon does **not** need the broker to be up when it starts:
+
+- GPIO outputs are set to their `initial` values, inputs are polled, and BMS polling runs immediately, whether or not MQTT is connected.
+- The MQTT connection is made in the background and retried with exponential backoff between `mqtt.reconnect_min_s` (default `1`) and `mqtt.reconnect_max_s` (default `60`) seconds — at startup and after any later outage.
+- On every successful (re)connect the daemon re-subscribes to its `…/set` topics and re-publishes availability (`online`), Home Assistant discovery, and the current state of every pin, so a broker restarted without persistence is fully repopulated.
+- While disconnected, qos 1/2 messages (the default `mqtt.qos: 1`) are queued in memory up to `mqtt.max_queued_messages` (default `1000`; `0` = unbounded). Once the queue is full, **new** messages are dropped. qos 0 messages are dropped while disconnected. State is re-published on reconnect anyway, so dropped intermediate states are not lost for long.
+- The log shows one warning per outage (plus one reminder after 10 failed attempts to check `mqtt.host` / `mqtt.port`), not one per retry.
+- Configuration errors (empty or malformed `mqtt.host`, out-of-range `mqtt.port`, inconsistent backoff bounds) still fail fast with exit code 1.
+
 ## Availability and Last Will
 
 `{base_topic}/status` is the node's availability topic (retained):
