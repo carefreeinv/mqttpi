@@ -74,6 +74,45 @@ The daemon does **not** need the broker to be up when it starts:
 - The log shows one warning per outage (plus one reminder after 10 failed attempts to check `mqtt.host` / `mqtt.port`), not one per retry.
 - Configuration errors (empty or malformed `mqtt.host`, out-of-range `mqtt.port`, inconsistent backoff bounds) still fail fast with exit code 1.
 
+## TLS
+
+`mqtt.tls` encrypts the broker connection. The certificate chain is always verified.
+
+```yaml
+mqtt:
+  host: broker.example.lan
+  tls: true                 # system CA store; port defaults to 8883
+```
+
+```yaml
+mqtt:
+  host: broker.example.lan
+  port: 8883
+  tls:
+    ca_certs: /etc/mqttpi/ca.crt       # private CA
+    certfile: /etc/mqttpi/client.crt   # optional client certificate
+    keyfile: /etc/mqttpi/client.key
+    # insecure: true                   # skip hostname check (lab only; warns)
+```
+
+- File paths can live in `secrets.yaml` (it is deep-merged onto `config.yaml`). Paths are checked at startup; missing or unreadable PEM files fail fast with exit code 1. Key material is never logged.
+- The startup log names the transport, e.g. `MQTT connecting to broker.example.lan:8883 over TLS (CA /etc/mqttpi/ca.crt) …`.
+- A failed handshake is logged once per outage as `TLS handshake failed (…CERTIFICATE_VERIFY_FAILED…) — check mqtt.tls.ca_certs, the broker certificate (expiry, hostname), and the system clock`, and the daemon keeps retrying (see [Startup and reconnect](#startup-and-reconnect)).
+- **No RTC?** Boards without a real-time clock boot with a wrong date until NTP syncs, so certificates look not-yet-valid. The background retries recover once time syncs. Renew broker certificates before they expire on unattended nodes.
+
+Minimal Mosquitto listener with a private CA:
+
+```conf
+# /etc/mosquitto/conf.d/tls.conf
+listener 8883
+cafile   /etc/mosquitto/certs/ca.crt
+certfile /etc/mosquitto/certs/server.crt
+keyfile  /etc/mosquitto/certs/server.key
+# require_certificate true   # enforce client certificates
+```
+
+The server certificate's subject alternative names must include the hostname or IP used in `mqtt.host`.
+
 ## Availability and Last Will
 
 `{base_topic}/status` is the node's availability topic (retained):

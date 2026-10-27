@@ -47,6 +47,8 @@ For ready-made layouts, prefer [`examples/README.md`](examples/README.md) — ea
 | Topic root | `mqttpi/{device.id}` unless overridden |
 | Availability | `{base_topic}/status` retained `online`/`offline`; MQTT Last Will marks a crashed node `offline` |
 | `mqtt.keepalive` | `60` s — broker declares a silent node dead after ~1.5× this |
+| `mqtt.tls` | `false` (plain TCP). `true` = TLS verified against the system CA store. Mapping: `ca_certs`, `certfile` + `keyfile` (client certificate), `insecure: true` (skip hostname check — lab only, logged as a warning). Missing files or unknown keys are startup errors. See [daemon.md](daemon.md#tls) |
+| `mqtt.port` | `1883`, or `8883` when TLS is on and no port is set |
 | `gpio.backend` | `rpi` (default) or `mock` — mock never touches hardware; with `rpi`, a missing GPIO library is a startup error |
 | `mqtt.reconnect_min_s` / `mqtt.reconnect_max_s` | `1` / `60` s — background connect/reconnect backoff; the daemon starts even when the broker is down |
 | `mqtt.max_queued_messages` | `1000` — qos>0 messages buffered while disconnected (newest dropped when full; `0` = unbounded) |
