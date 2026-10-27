@@ -8,8 +8,8 @@
 - **Depends on:** command-filter-hook
 
 ## Progress
-- [ ] Step 1: Expander backend implementing the GPIO backend interface
-- [ ] Step 2: Config wiring for expander pins
+- [x] Step 1: Expander backend implementing the GPIO backend interface
+- [x] Step 2: Config wiring for expander pins
 - [ ] Step 3: Docs and bench test
 - [ ] Done when holds
 
@@ -55,3 +55,16 @@ Python per `.anchor/conventions.md`: small composable classes, Protocols or narr
 - `pytest -q` passes
 - Relay-bank examples run with the fake expander
 - Bench result recorded
+
+## Handoff
+
+- Implemented on `feature/mcp23017-expander-driver`, stacked on `feature/onewire-i2c-sensor-drivers`, which provides the shared I2C bus and the `smbus2` extra.
+- **Steps 1–2 are done**, with unit tests against an in-memory register model.
+  - The relay-bank-32 example runs with the fake. relay-bank-16 is unchanged.
+- **Step 3:** the docs are done. The **bench test is open**:
+  - two MCP23017 chips at 0x20/0x21 on a Pi;
+  - relay toggles from HA;
+  - an input with a pull-up;
+  - power-cycle one chip while running and confirm its outputs are restored within `check_interval_s`;
+  - unplug SDA and confirm the daemon keeps running and recovers.
+- **Decision:** expander pins are released to inputs on shutdown, matching `RPi.GPIO.cleanup()`.
