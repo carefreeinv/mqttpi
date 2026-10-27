@@ -8,10 +8,10 @@
 - **Depends on:** gpio-backend-fail-loud
 
 ## Progress
-- [ ] Step 1: Add the board profile
-- [ ] Step 2: Pin map and validation
+- [x] Step 1: Add the board profile
+- [x] Step 2: Pin map and validation
 - [ ] Step 3: Bench test on real hardware
-- [ ] Step 4: Docs and example
+- [x] Step 4: Docs and example
 - [ ] Done when holds
 
 ## Goal
@@ -56,3 +56,15 @@ Python per `.anchor/conventions.md`: small composable classes, Protocols or narr
 - `pytest -q` passes with board validation tests
 - Bench results recorded and signed off
 - Docs list the board with its tested OS
+
+## Handoff
+- Implemented on branch `feature/pi-zero-w-board`, stacked on `fix/input-debounce-and-jbd-frames`.
+- Step 1–2 (profile, pin map, validation):
+  - `mqttpi/boards.py` adds the `BoardProfile` data for `pi3`, `pi4`, `pi5`, `pizero` and `picow`. Aliases include `pizero2w`, `pizero_w`, `zero2w` and `pico_w`.
+  - `validate_pins(cfg)` is called from `GpioManager.__init__`. The validation hook lives in `boards.py` rather than `gpio/pins.py`, so `parse_pins` stays board-agnostic.
+  - Hard errors, all listed together, stop startup: a pin that does not exist on the board, a duplicate pin, or a pin claimed by an enabled bus (any integer setting under an enabled `buses.*`, or GPIO 14/15 when `bms.port` is `/dev/serial0`).
+  - Warnings: GPIO 0/1 (ID EEPROM), `analog` without an ADC, and `pwm` without hardware PWM.
+  - A missing or unknown `device.board` is not validated, so the change is backward compatible. Every example YAML passes validation (tested).
+- Step 4: `examples/pizero-relays.yaml` and `.md`, the README "Supported boards" table, the daemon.md "Board notes" table, and CHANGELOG.
+- Verified: 190 passed (Python 3.13). The board and GPIO manager tests also pass on Python 3.9. `ruff` is clean and the docs build passes.
+- **Not ticked: Step 3 (bench test).** It needs a human with a Pi Zero W running Raspberry Pi OS Lite: outputs, inputs, and daemon CPU and memory over 24 h. Record the OS and the RPi.GPIO version here. "Done when" waits on this sign-off.

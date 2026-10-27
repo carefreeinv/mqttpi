@@ -125,6 +125,7 @@ def stage_examples() -> None:
         "relay-bank-32.md",
         "robot.md",
         "linear-actuator.md",
+        "pizero-relays.md",
     ]
     protocols = [
         "jbd-bms.md",
