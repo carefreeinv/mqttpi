@@ -27,3 +27,6 @@ site/
 *~
 .idea/
 .vscode/
+
+# Anchor local state (worktrees, caches) — never commit
+var/
