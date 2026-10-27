@@ -19,6 +19,7 @@
 #   switch:         {base_topic}/gpio/{alias}/state|set
 #   binary_sensor:  {base_topic}/gpio/{alias}/state
 #   sensor (ADC):   {base_topic}/gpio/{alias}/state
+#   sensor (driver): {base_topic}/sensors/{alias}/state  (see sensors: below)
 #   number (PWM):   {base_topic}/gpio/{alias}/state|set
 
 device:
@@ -64,3 +65,9 @@ pwm:
 mqtt_aliases: {}
 
 pins: []
+
+# Numeric sensors (HA sensor entities); see daemon.md#sensors-numeric-readings
+# sensors:
+#   cpu:
+#     type: cpu_temperature
+#     publish: { interval_ms: 30000 }
