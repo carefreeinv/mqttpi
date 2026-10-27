@@ -8,9 +8,9 @@
 - **Depends on:** command-filter-hook
 
 ## Progress
-- [ ] Step 1: PWM backend interface (hardware and software PWM)
-- [ ] Step 2: `pwm_output` pin direction with HA number discovery
-- [ ] Step 3: Commands through the command filter
+- [x] Step 1: PWM backend interface (hardware and software PWM)
+- [x] Step 2: `pwm_output` pin direction with HA number discovery
+- [x] Step 3: Commands through the command filter
 - [ ] Step 4: Docs and bench test
 - [ ] Done when holds
 
@@ -57,3 +57,14 @@ Python per `.anchor/conventions.md`: small composable classes, Protocols or narr
 - `pytest -q` passes
 - `examples/pwm-bank.yaml` runs with `--mock-gpio`
 - Bench result recorded
+
+## Handoff
+
+- Implemented on branch `feature/pwm-output-driver` (stacked on `feature/ha-numeric-sensor-entities`).
+- Steps 1–3 are done, with unit tests: a mock backend, a fake sysfs tree, manager and filter tests, and a discovery snapshot.
+- Step 4: the docs are done. The **bench test is still open**:
+  - software PWM on a Pi 4 (LED or scope at 1 kHz);
+  - hardware PWM with `dtoverlay=pwm-2chan` on GPIO 12/13 (scope check of frequency and duty);
+  - Pi 5 `pwmchip` numbering;
+  - a dual-PWM H-bridge actuator with the interlock script.
+- Decision: software PWM is the default and hardware PWM is opt-in (`pwm_mode: hardware`), so an overlay routed to a different pin cannot drive the wrong pin.
