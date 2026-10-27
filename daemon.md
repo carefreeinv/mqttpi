@@ -7,7 +7,7 @@ The **unified mqttpi daemon** reads `config.yaml` (+ `secrets.yaml`) and starts 
 | `pins[]` with `direction: output` or `input` | GPIO → MQTT → Home Assistant | **Implemented** (v0.2) |
 | `bms.enabled: true` | JBD UART → MQTT → HA | **Implemented** |
 
-PWM outputs, sensors and MCP23017 expanders are implemented too (sections below). Other example configs (CAN, Victron, …) remain **config contracts** until their drivers are added.
+PWM outputs, sensors, MCP23017 expanders and read-only CAN frame decoding are implemented too (sections below). Other example configs (RV-C, Victron, …) remain **config contracts** until their drivers are added.
 
 ## Supported examples today
 
@@ -109,6 +109,26 @@ Discovery: `homeassistant/sensor/<device.id>_<alias>/config` (or the node-id lay
 - **Documented ahead of drivers** (configs load, and the entries are skipped with a warning):
   - `analog_input` pins with `source: ads1115` (an external ADC, [analog-inputs.yaml](examples/analog-inputs.yaml));
   - `ina219` / `ina226` power monitors ([power-monitor.md](examples/power-monitor.md)).
+
+## CAN bus (SocketCAN)
+
+`type: can_frame` sensors decode frames from a Linux SocketCAN interface (an MCP2515 HAT, a USB adapter, or `vcan0`) into numeric entities, through the shared sensor pipeline. The full key reference is in [can-frames.md](examples/can-frames.md).
+
+```yaml
+sensors:
+  battery:
+    type: can_frame
+    interface: can0
+    id: 0x356                 # or pgn: 0xFEEE for 29-bit J1939-style frames
+    max_age_s: 10
+    readings:
+      voltage: { start_byte: 0, length: 2, scale: 0.01, ha: { device_class: voltage, unit_of_measurement: "V" } }
+```
+
+- **No extra dependency.** It uses the stdlib `socket.AF_CAN`.
+- **mqttpi does not configure the interface.** Bring it up with `sudo ip link set can0 up type can bitrate 250000 restart-ms 100`.
+- One reader thread per interface. It starts on the first sensor read, not while the config loads, and reopens the socket with backoff if the interface goes down. Bus-off is logged.
+- **Read-only.** Nothing is transmitted. Sending (with the command filters) and protocol decoders (RV-C) are not implemented; the top-level `can:` / `buses.can.rvc` blocks in the examples are contracts.
 
 ## I2C GPIO expanders (MCP23017)
 

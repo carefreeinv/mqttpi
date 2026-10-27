@@ -1,0 +1,89 @@
+# CAN (SocketCAN) — decode broadcast frames into Home Assistant sensors
+#
+# Linux daemon, read-only. Works with any SocketCAN interface: an MCP2515 SPI
+# HAT (dtoverlay=mcp2515-can0,oscillator=16000000,interrupt=25), a USB-CAN
+# adapter (gs_usb / slcan), or vcan0 for testing. Bring the interface up first:
+#
+#   sudo ip link set can0 up type can bitrate 250000 restart-ms 100
+#   cp examples/can-frames.yaml config.yaml
+#   candump can0                      # see what is on the bus
+#
+# Byte layouts below are illustrative; take yours from the device's CAN
+# documentation. Only listen on buses you own or have permission to access.
+
+device:
+  id: can-01
+  board: pi4
+  ha:
+    name: "CAN Gateway"
+
+mqtt:
+  host: 192.168.1.50
+  port: 1883
+  base_topic: mqttpi/can-01
+  client_id: mqttpi-can-01
+  homeassistant:
+    discovery: true
+    discovery_prefix: homeassistant
+  retain: true
+  qos: 1
+
+buses:
+  spi: { enabled: true, controller: 0 }
+  can:
+    enabled: true
+    backend: socketcan
+    interface: can0
+    bitrate: 250000           # documentation only: set with `ip link` (above)
+    mode: read_only
+
+sensors:
+  # 11-bit frame from a battery monitor: voltage, current, temperature
+  battery:
+    type: can_frame
+    interface: can0
+    id: 0x356
+    publish: { interval_ms: 2000 }
+    max_age_s: 10             # no frame for 10 s → read error → entity offline (stale_after_s)
+    readings:
+      voltage:
+        start_byte: 0
+        length: 2             # little-endian by default
+        scale: 0.01
+        ha: { name: "Battery Voltage", device_class: voltage, unit_of_measurement: "V", precision: 2 }
+      current:
+        start_byte: 2
+        length: 2
+        signed: true
+        scale: 0.1
+        ha: { name: "Battery Current", device_class: current, unit_of_measurement: "A", precision: 1 }
+      temperature:
+        start_byte: 4
+        length: 2
+        signed: true
+        scale: 0.1
+        ha: { name: "Battery Temperature", device_class: temperature, unit_of_measurement: "°C" }
+
+  # 29-bit J1939-style frame matched by PGN (any priority / source):
+  # Engine Temperature 1 (PGN 65262), byte 0 = coolant, 1 °C/bit, -40 °C offset
+  engine:
+    type: can_frame
+    pgn: 0xFEEE
+    # source_address: 0x00    # only this sender
+    publish: { interval_ms: 5000 }
+    max_age_s: 15
+    readings:
+      coolant_temperature:
+        start_byte: 0
+        offset: -40           # 0xFF (not available) is skipped automatically
+        ha: { name: "Coolant Temperature", device_class: temperature, unit_of_measurement: "°C" }
+
+  # Status bits from one panel among several sharing an id (byte 0 = instance)
+  switch_panel:
+    type: can_frame
+    id: 0x18FF1021
+    match: { 0: 1 }           # data[0] == 1
+    publish: { interval_ms: 1000 }
+    readings:
+      input_1: { start_byte: 1, bit: 0, precision: 0, ha: { name: "Panel Input 1", state_class: measurement } }
+      input_2: { start_byte: 1, bit: 1, precision: 0, ha: { name: "Panel Input 2", state_class: measurement } }
