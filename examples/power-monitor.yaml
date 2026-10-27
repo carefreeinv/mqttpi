@@ -1,0 +1,51 @@
+# Current / voltage / power monitor (INA219 / INA226-class) on I2C
+#
+#   cp examples/power-monitor.yaml config.yaml
+#
+# Schema only: the power_monitor driver is documented ahead of its
+# implementation. Today the daemon loads this config, logs
+# "no driver for type 'ina219' yet" and runs the CPU temperature sensor.
+
+device:
+  id: power-01
+  board: pi4
+  ha:
+    name: "Power Monitor"
+
+mqtt:
+  host: 192.168.1.50
+  port: 1883
+  base_topic: mqttpi/power-01
+  client_id: mqttpi-power-01
+  homeassistant:
+    discovery: true
+    discovery_prefix: homeassistant
+  retain: true
+  qos: 1
+
+buses:
+  i2c: { enabled: true, controller: 1, sda: 2, scl: 3 }
+
+sensors:
+  cpu:
+    type: cpu_temperature
+
+  battery:
+    type: ina219              # or ina226
+    bus: 1
+    address: 0x40             # 0x40-0x4F (A0/A1 straps)
+    shunt_ohms: 0.1           # value of the shunt resistor
+    max_current_a: 3.2        # expected maximum; sets the calibration / resolution
+    # bus_voltage_range: 32   # INA219 only: 16 or 32 V
+    # averaging: 16           # INA226 only: samples averaged per conversion
+    publish: { interval_ms: 5000 }
+    readings:                 # defaults when omitted: voltage, current, power
+      voltage:
+        alias: battery_voltage
+        ha: { name: "Battery Voltage", device_class: voltage, unit_of_measurement: "V", precision: 2 }
+      current:
+        alias: battery_current
+        ha: { name: "Battery Current", device_class: current, unit_of_measurement: "A", precision: 3 }
+      power:
+        alias: battery_power
+        ha: { name: "Battery Power", device_class: power, unit_of_measurement: "W", precision: 1 }

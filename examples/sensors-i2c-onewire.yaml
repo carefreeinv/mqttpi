@@ -2,8 +2,10 @@
 #
 #   cp examples/sensors-i2c-onewire.yaml config.yaml
 #
-# Bus-attached sensors (BME280, DS18B20) will get HA discovery in a later phase.
-# This example maps two contact inputs for HA today.
+# Two contact inputs plus bus-attached sensors (BME280 on I2C, DS18B20 on
+# 1-Wire) published as HA sensor entities by the Linux daemon. On a Raspberry
+# Pi, set device.board (e.g. pi4), enable I2C (raspi-config) and 1-Wire
+# (dtoverlay=w1-gpio,gpiopin=4), and pip install smbus2.
 
 device:
   id: sensors-01
@@ -56,3 +58,20 @@ pins:
     ha:
       name: "Leak Detector"
       device_class: moisture
+
+sensors:
+  air:
+    type: bme280              # also: bmp280, sht3x/sht31, sht4x/sht41
+    bus: 1                    # /dev/i2c-1
+    address: 0x76             # 0x77 with SDO high
+    publish: { interval_ms: 30000 }
+    # readings default to temperature (°C), humidity (%), pressure (hPa)
+
+  probe:
+    type: ds18b20
+    address: 28-0316a2795f2b  # ls /sys/bus/w1/devices/ — omit with a single probe
+    publish: { interval_ms: 30000 }
+    readings:
+      temperature:
+        alias: probe_temperature
+        ha: { name: "Probe Temperature" }

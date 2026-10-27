@@ -142,11 +142,15 @@ def test_documented_example_contract_parses(fake_type) -> None:
         unregister_driver("vl53l0x")
 
 
+#: Examples whose sensors have built-in drivers (the rest document contracts ahead of drivers).
+EXAMPLES_WITH_DRIVERS = {"sensors-i2c-onewire.yaml", "power-monitor.yaml"}
+
+
 def test_examples_without_drivers_do_not_enable_sensors() -> None:
     for path in sorted((ROOT / "examples").rglob("*.yaml")):
         cfg = load_config(path)
         if cfg.get("sensors"):
-            assert not sensors_configured(cfg), path  # documented ahead of their drivers
+            assert sensors_configured(cfg) == (path.name in EXAMPLES_WITH_DRIVERS), path
 
 
 # -- cpu_temperature driver ----------------------------------------------

@@ -34,6 +34,7 @@ Runtime merges `secrets.yaml` onto `config.yaml`. Home Assistant MQTT **discover
 | `robot.yaml` | [robot.md](robot.md) | Differential-drive rover |
 | `linear-actuator.yaml` | [linear-actuator.md](linear-actuator.md) | Reversible actuator: 2 relays + end stops, software interlock |
 | `linear-actuator-pwm.yaml` | [linear-actuator-pwm.md](linear-actuator-pwm.md) | Actuator with speed control: dual-PWM H-bridge + end stops, same interlock |
+| `power-monitor.yaml` | [power-monitor.md](power-monitor.md) | INA219/INA226 voltage, current, power (schema only) |
 | `pizero-relays.yaml` | [pizero-relays.md](pizero-relays.md) | Pi Zero W / Zero 2 W: 4 relays + 2 contact inputs |
 
 ## Protocol & sensor examples
