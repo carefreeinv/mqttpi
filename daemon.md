@@ -161,9 +161,24 @@ Daemon(cfg, command_filters=[
 
 Filters are library-only for now (no config syntax). See [linear-actuator.md](examples/linear-actuator.md) for a runnable example.
 
+## BMS and the MQTT connection
+
+In the unified daemon the BMS subsystem **shares the daemon's single MQTT connection**: one client id (`mqtt.client_id`), one Last Will, one node availability topic (`{base_topic}/status`).
+
+BMS health is reported separately on `{base_topic}/bms/status` (retained `online` after a successful poll, `offline` when a poll fails or the subsystem stops). BMS entities in Home Assistant use both topics with `availability_mode: all`, so:
+
+- the node goes down (crash, power, network) → every entity is unavailable (Last Will);
+- only the BMS link fails (UART unplugged) → BMS entities are unavailable, GPIO entities stay available.
+
+Entity unique ids, state topics, and the other discovery fields are unchanged.
+
 ## Standalone BMS bridge
 
-`python3 -m mqttpi.bms.bridge` still works for BMS-only deployments and one-shot tests (`--once`). New installs should prefer `python3 -m mqttpi` so GPIO and BMS can share one process when needed.
+`python3 -m mqttpi.bms.bridge` (or `mqttpi-bms`) still works for BMS-only deployments and one-shot tests (`--once`). It opens its own connection, which now has the same Last Will and background reconnect as the daemon, and uses `{base_topic}/status` for BMS availability as before.
+
+Its client id is `bms.client_id` if set, otherwise `{mqtt.client_id}-bms`, so it never collides with a daemon running on the same config. `--once` waits up to 10 s for the broker and exits with an error if it is unreachable.
+
+New installs should prefer `python3 -m mqttpi` so GPIO and BMS share one process and one connection.
 
 ## Board notes
 

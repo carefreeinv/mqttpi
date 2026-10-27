@@ -4,21 +4,41 @@ from __future__ import annotations
 
 import json
 import logging
-from typing import Any, Dict, List, Optional
-
-import paho.mqtt.client as mqtt
+from typing import Any, Callable, Dict, List, Optional, Protocol
 
 from mqttpi.bms.jbd_protocol import BmsData
 from mqttpi.config import TlsSettings
-from mqttpi.mqtt.client import apply_tls
+from mqttpi.mqtt.client import MqttConnection, availability_topic_for
 
 log = logging.getLogger(__name__)
 
 
+class MqttPublisher(Protocol):
+    """The slice of :class:`~mqttpi.mqtt.client.MqttConnection` the BMS needs."""
+
+    def publish(self, topic: str, payload: str) -> None: ...
+
+    def add_connect_callback(self, callback: Callable[[], None]) -> None: ...
+
+
 class BmsMqttPublisher:
+    """Publishes JBD BMS data and HA discovery.
+
+    Two modes:
+
+    * **Shared** (unified daemon): pass ``connection=`` — the daemon's
+      :class:`MqttConnection`. One client id, one Last Will, one ``{base}/status``.
+      BMS health goes to ``{base}/bms/status`` so a BMS read failure does not
+      mark the whole node (GPIO entities) unavailable. ``connect()`` /
+      ``disconnect()`` are no-ops; the daemon owns the connection.
+    * **Standalone** (``mqttpi-bms``): pass broker settings (or a connection
+      with ``owns_connection=True``); the publisher owns an :class:`MqttConnection` with Last Will and background reconnect, and
+      BMS health is the node availability ``{base}/status`` as before.
+    """
+
     def __init__(
         self,
-        host: str,
+        host: str = "localhost",
         port: int = 1883,
         username: str = "",
         password: str = "",
@@ -29,54 +49,74 @@ class BmsMqttPublisher:
         discovery_prefix: str = "homeassistant",
         retain: bool = True,
         tls: Optional[TlsSettings] = None,
+        connection: Optional[MqttPublisher] = None,
+        owns_connection: bool = False,
     ) -> None:
         self.host = host
         self.port = port
-        self.username = username
-        self.password = password
         self.base_topic = base_topic.rstrip("/")
         self.client_id = client_id
         self.device_name = device_name
         self.device_id = device_id
         self.discovery_prefix = discovery_prefix
         self.retain = retain
-        self._client = mqtt.Client(
-            mqtt.CallbackAPIVersion.VERSION2,
-            client_id=self.client_id,
-        )
-        if username:
-            self._client.username_pw_set(username, password or None)
-        self._discovery_done = False
-        self._client.on_connect = self._on_connect
         self.tls = tls
-        if tls is not None:
-            apply_tls(self._client, tls)
-
-    def connect(self, blocking: bool = False) -> None:
-        """Connect to the broker.
-
-        Non-blocking by default: paho retries in the background (1-60 s
-        backoff) so BMS polling keeps running while the broker is down.
-        ``blocking=True`` keeps the old fail-fast behavior for one-shot use.
-        """
-        if blocking:
-            self._client.connect(self.host, self.port, keepalive=60)
+        self.node_status_topic = availability_topic_for(self.base_topic)
+        self._owns_connection = connection is None or owns_connection
+        if connection is None:
+            connection = MqttConnection(
+                host=host,
+                port=port,
+                username=username,
+                password=password,
+                client_id=client_id,
+                retain=retain,
+                base_topic=self.base_topic,
+                tls=tls,
+            )
+        if self._owns_connection:
+            self.status_topic = self.node_status_topic
         else:
-            self._client.reconnect_delay_set(1, 60)
-            self._client.connect_async(self.host, self.port, keepalive=60)
-        self._client.loop_start()
-        log.info("MQTT connecting to %s:%s", self.host, self.port)
+            self.status_topic = f"{self.base_topic}/bms/status"
+        self._conn = connection
+        self._discovery_done = False
+        self._conn.add_connect_callback(self._on_connect)
 
-    def _on_connect(self, _client, _userdata, _flags, reason_code, _properties=None) -> None:
-        if getattr(reason_code, "is_failure", False):
+    @property
+    def shared(self) -> bool:
+        return not self._owns_connection
+
+    @property
+    def connection(self) -> MqttPublisher:
+        return self._conn
+
+    def connect(self, blocking: bool = False, timeout: float = 10.0) -> None:
+        """Connect an owned connection (no-op when shared).
+
+        Non-blocking by default: retries in the background so polling keeps
+        running while the broker is down. ``blocking=True`` waits up to
+        ``timeout`` seconds and raises ``RuntimeError`` if the broker does not
+        answer (fail-fast for ``--once``).
+        """
+        if not self._owns_connection:
             return
+        conn = self._conn
+        assert isinstance(conn, MqttConnection)
+        conn.connect()
+        if blocking and not conn.wait_connected(timeout):
+            conn.disconnect()
+            raise RuntimeError(f"MQTT broker {self.host}:{self.port} not reachable within {timeout:.0f}s")
+
+    def _on_connect(self) -> None:
         # Re-send discovery on the next publish after every (re)connect, so a
         # broker restarted without persistence learns the entities again.
         self._discovery_done = False
 
     def disconnect(self) -> None:
-        self._client.loop_stop()
-        self._client.disconnect()
+        if self._owns_connection:
+            conn = self._conn
+            assert isinstance(conn, MqttConnection)
+            conn.disconnect()
 
     def publish(self, data: BmsData, connection: str) -> None:
         if not self._discovery_done:
@@ -246,6 +286,7 @@ class BmsMqttPublisher:
                 "unique_id": f"{self.device_id}_{spec['object_id']}",
                 "state_topic": self._state_topic(spec["key"]),
                 "device": device,
+                **self._availability(),
             }
             if "unit" in spec:
                 payload["unit_of_measurement"] = spec["unit"]
@@ -263,6 +304,7 @@ class BmsMqttPublisher:
                 "unique_id": f"{self.device_id}_{key}",
                 "state_topic": self._state_topic(key),
                 "device": device,
+                **self._availability(),
                 "payload_on": "ON",
                 "payload_off": "OFF",
                 "icon": f"mdi:{icon}",
@@ -274,6 +316,7 @@ class BmsMqttPublisher:
             "unique_id": f"{self.device_id}_protection_flags",
             "state_topic": self._state_topic("protection_flags"),
             "device": device,
+            **self._availability(),
             "icon": "mdi:alert-circle-outline",
         }
         self._publish_json(self._discovery_topic("sensor", "protection_flags"), text_payload)
@@ -304,7 +347,7 @@ class BmsMqttPublisher:
             values[f"temperature_{i}"] = round(temp, 1)
 
         for key, value in values.items():
-            self._client.publish(self._state_topic(key), str(value), retain=self.retain)
+            self._conn.publish(self._state_topic(key), str(value))
 
         summary = {
             "soc": data.soc,
@@ -316,15 +359,22 @@ class BmsMqttPublisher:
             "protection_flags": data.protection_flags,
             "balancing_cells": data.balancing_cells,
         }
-        self._client.publish(
-            f"{self.base_topic}/bms/state",
-            json.dumps(summary),
-            retain=self.retain,
-        )
+        self._conn.publish(f"{self.base_topic}/bms/state", json.dumps(summary))
 
     def _publish_availability(self, online: bool) -> None:
-        payload = "online" if online else "offline"
-        self._client.publish(f"{self.base_topic}/status", payload, retain=self.retain)
+        self._conn.publish(self.status_topic, "online" if online else "offline")
+
+    def _availability(self) -> Dict[str, Any]:
+        if self.status_topic == self.node_status_topic:
+            return {"availability_topic": self.node_status_topic}
+        # Shared mode: unavailable when the node is offline OR the BMS is failing.
+        return {
+            "availability": [
+                {"topic": self.node_status_topic},
+                {"topic": self.status_topic},
+            ],
+            "availability_mode": "all",
+        }
 
     def _publish_json(self, topic: str, payload: Dict[str, Any]) -> None:
-        self._client.publish(topic, json.dumps(payload), retain=self.retain)
+        self._conn.publish(topic, json.dumps(payload))

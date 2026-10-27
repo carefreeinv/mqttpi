@@ -90,6 +90,7 @@ class MqttConnection:
         self.retain = retain
         self.qos = qos
         self.keepalive = int(keepalive)
+        self.base_topic = base_topic.rstrip("/") if base_topic else None
         if availability_topic is None and base_topic is not None:
             availability_topic = availability_topic_for(base_topic)
         self.availability_topic = availability_topic
@@ -176,8 +177,10 @@ class MqttConnection:
         return f"TLS ({self.tls.describe()})" if self.tls is not None else "plain TCP"
 
     def disconnect(self) -> None:
-        self._client.loop_stop()
+        # disconnect() first: the network thread flushes queued messages
+        # (e.g. the final "offline") before sending DISCONNECT, then exits.
         self._client.disconnect()
+        self._client.loop_stop()
         self._connected.clear()
 
     # -- publish / subscribe -------------------------------------------
