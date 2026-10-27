@@ -3,10 +3,11 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from mqttpi.gpio.pins import PinConfig
 from mqttpi.mqtt.client import MqttConnection
+from mqttpi.mqtt.discovery import DiscoveryLayout
 
 log = logging.getLogger(__name__)
 
@@ -23,8 +24,10 @@ class GpioMqttPublisher:
         payload_off: str,
         manufacturer: str = "mqttpi",
         model: str = "",
+        layout: Optional[DiscoveryLayout] = None,
     ) -> None:
         self.mqtt = mqtt
+        self.layout = layout or DiscoveryLayout(prefix=discovery_prefix)
         self.base_topic = base_topic.rstrip("/")
         self.device_id = device_id
         self.device_name = device_name
@@ -67,7 +70,11 @@ class GpioMqttPublisher:
         return f"{self.base_topic}/gpio/{alias}/set"
 
     def _discovery_topic(self, component: str, object_id: str) -> str:
-        return f"{self.discovery_prefix}/{component}/{self.device_id}_{object_id}/config"
+        # Clear old-layout retained configs first, so HA never sees the same
+        # unique_id on two discovery topics at once.
+        for stale in self.layout.stale_topics(component, self.device_id, object_id):
+            self.mqtt.publish(stale, "", retain=True)
+        return self.layout.topic(component, self.device_id, object_id)
 
     def _publish_switch_discovery(self, pin: PinConfig, device: Dict[str, Any]) -> None:
         payload: Dict[str, Any] = {

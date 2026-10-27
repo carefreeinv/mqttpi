@@ -9,6 +9,7 @@ from typing import Any, Callable, Dict, List, Optional, Protocol
 from mqttpi.bms.jbd_protocol import BmsData
 from mqttpi.config import TlsSettings
 from mqttpi.mqtt.client import MqttConnection, availability_topic_for
+from mqttpi.mqtt.discovery import DiscoveryLayout
 
 log = logging.getLogger(__name__)
 
@@ -16,7 +17,7 @@ log = logging.getLogger(__name__)
 class MqttPublisher(Protocol):
     """The slice of :class:`~mqttpi.mqtt.client.MqttConnection` the BMS needs."""
 
-    def publish(self, topic: str, payload: str) -> None: ...
+    def publish(self, topic: str, payload: str, retain: Optional[bool] = None) -> None: ...
 
     def add_connect_callback(self, callback: Callable[[], None]) -> None: ...
 
@@ -51,6 +52,7 @@ class BmsMqttPublisher:
         tls: Optional[TlsSettings] = None,
         connection: Optional[MqttPublisher] = None,
         owns_connection: bool = False,
+        layout: Optional[DiscoveryLayout] = None,
     ) -> None:
         self.host = host
         self.port = port
@@ -59,6 +61,7 @@ class BmsMqttPublisher:
         self.device_name = device_name
         self.device_id = device_id
         self.discovery_prefix = discovery_prefix
+        self.layout = layout or DiscoveryLayout(prefix=discovery_prefix)
         self.retain = retain
         self.tls = tls
         self.node_status_topic = availability_topic_for(self.base_topic)
@@ -138,7 +141,9 @@ class BmsMqttPublisher:
         }
 
     def _discovery_topic(self, component: str, object_id: str) -> str:
-        return f"{self.discovery_prefix}/{component}/{self.device_id}_{object_id}/config"
+        for stale in self.layout.stale_topics(component, self.device_id, object_id):
+            self._conn.publish(stale, "", retain=True)
+        return self.layout.topic(component, self.device_id, object_id)
 
     def _state_topic(self, key: str) -> str:
         return f"{self.base_topic}/bms/{key}/state"

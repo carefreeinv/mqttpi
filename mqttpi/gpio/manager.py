@@ -13,6 +13,7 @@ from mqttpi.gpio.commands import CommandFilter, CommandRequest, run_filters
 from mqttpi.gpio.ha_mqtt import GpioMqttPublisher
 from mqttpi.gpio.pins import PinConfig, parse_pins
 from mqttpi.mqtt.client import MqttConnection
+from mqttpi.mqtt.discovery import parse_discovery_layout
 
 log = logging.getLogger(__name__)
 
@@ -47,6 +48,7 @@ class GpioManager:
             payload_off=str(mqtt_cfg.get("payload_off", "OFF")),
             manufacturer=str(ha_cfg.get("manufacturer", "mqttpi")),
             model=str(ha_cfg.get("model", device_cfg.get("board", ""))),
+            layout=parse_discovery_layout(cfg),
         )
         gpio_cfg = cfg.get("gpio") or {}
         backend_choice = gpio_cfg.get("backend") if isinstance(gpio_cfg, dict) else None

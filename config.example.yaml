@@ -41,6 +41,8 @@ mqtt:
   homeassistant:
     discovery: true
     discovery_prefix: homeassistant
+    # discovery_node_id: true      # opt-in: homeassistant/<component>/<device.id>/<alias>/config (per-node ACLs)
+    # discovery_clear_legacy: true # with node ids: clear the old flat-layout configs first
   payload_on: "ON"
   payload_off: "OFF"
   retain: true

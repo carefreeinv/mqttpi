@@ -15,6 +15,7 @@ from mqttpi.bms.ha_mqtt import BmsMqttPublisher
 from mqttpi.bms.jbd_uart import JbdUartClient
 from mqttpi.config import load_config
 from mqttpi.mqtt.client import MqttConnection
+from mqttpi.mqtt.discovery import parse_discovery_layout
 from mqttpi.mqtt.factory import base_topic_from, build_mqtt, default_client_id
 
 log = logging.getLogger("mqttpi.bms")
@@ -47,6 +48,7 @@ def build_publisher(cfg: Dict[str, Any], connection: Optional[MqttConnection] = 
             "discovery_prefix", "homeassistant"
         ),
         retain=bool(mqtt_cfg.get("retain", True)),
+        layout=parse_discovery_layout(cfg),
     )
 
     if connection is not None:
