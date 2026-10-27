@@ -228,8 +228,12 @@ class GpioManager:
         return value
 
     def _input_poll_loop(self) -> None:
-        last_change: Dict[str, float] = {alias: 0.0 for alias in self._inputs}
+        # Debounce = the reading must hold a new value for ``debounce_ms``
+        # before it is accepted. Bounces reset the timer; a value that settles
+        # is always published once it has been stable long enough.
         stable: Dict[str, bool] = dict(self._input_state)
+        candidate: Dict[str, bool] = dict(stable)
+        since: Dict[str, float] = {alias: time.monotonic() for alias in self._inputs}
 
         while not self._stop.is_set():
             now = time.monotonic()
@@ -238,12 +242,13 @@ class GpioManager:
                 logical = self._logical_input(pin, raw)
                 debounce_s = pin.debounce_ms / 1000.0
 
-                if logical != stable.get(alias, logical):
-                    if now - last_change[alias] >= debounce_s:
-                        stable[alias] = logical
-                        self._input_state[alias] = logical
-                        self.publisher.publish_state(alias, logical)
-                        log.debug("Input %s → %s", alias, logical)
-                    last_change[alias] = now
+                if logical != candidate.get(alias, logical):
+                    candidate[alias] = logical
+                    since[alias] = now
+                if candidate[alias] != stable.get(alias, logical) and now - since[alias] >= debounce_s:
+                    stable[alias] = candidate[alias]
+                    self._input_state[alias] = candidate[alias]
+                    self.publisher.publish_state(alias, candidate[alias])
+                    log.debug("Input %s → %s", alias, candidate[alias])
 
             self._stop.wait(0.02)

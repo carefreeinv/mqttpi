@@ -38,9 +38,14 @@ def chksum(data: bytes) -> int:
 
 
 def build_read_frame(address: int) -> bytes:
-    body = bytes([CMD_READ, address, 0x00])
-    crc = chksum(body)
-    return bytes([PKT_START]) + body + bytes([(crc >> 8) & 0xFF, crc & 0xFF, PKT_END])
+    """Read request ``DD A5 <register> 00 <crc> 77``.
+
+    The checksum covers register + length (+ data), not the 0xA5 read byte:
+    ``build_read_frame(0x03) == bytes.fromhex("DDA50300FFFD77")``.
+    """
+    payload = bytes([address, 0x00])
+    crc = chksum(payload)
+    return bytes([PKT_START, CMD_READ]) + payload + bytes([(crc >> 8) & 0xFF, crc & 0xFF, PKT_END])
 
 
 def parse_frame(raw: bytes) -> tuple[int, bytes]:
@@ -108,7 +113,9 @@ def parse_hwinfo(data: bytes) -> BmsData:
     result.capacity_remaining_ah = _get16(data, 4) * 0.01
     result.nominal_capacity_ah = _get16(data, 6) * 0.01
     result.cycle_count = _get16(data, 8)
-    balance_mask = int.from_bytes(data[12:16], "big")
+    # Balance status: low word (offset 12) bit n = cell n+1, high word
+    # (offset 14) bit n = cell n+17.
+    balance_mask = _get16(data, 12) | (_get16(data, 14) << 16)
     result.protection_bitmask = _get16(data, 16)
     result.protection_active = result.protection_bitmask != 0
     result.protection_flags = _bitmask_labels(ERRORS, result.protection_bitmask)
@@ -123,8 +130,8 @@ def parse_hwinfo(data: bytes) -> BmsData:
         (_get16(data, 23 + i * 2) - 2731) * 0.1 for i in range(temp_count)
     ]
     balancing_cells: List[str] = []
-    for i in range(result.cell_count):
-        if balance_mask & (1 << (result.cell_count - 1 - i)):
+    for i in range(min(result.cell_count, 32)):
+        if balance_mask & (1 << i):
             balancing_cells.append(str(i + 1))
     result.balancing = bool(balance_mask)
     result.balancing_cells = ", ".join(balancing_cells)
