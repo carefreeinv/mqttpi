@@ -11,48 +11,14 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence
 
 from mqttpi.bms.subsystem import BmsSubsystem, bms_enabled
-from mqttpi.config import load_config, mqtt_port, parse_tls
+from mqttpi.config import load_config
 from mqttpi.gpio.commands import CommandFilter
 from mqttpi.gpio.manager import GpioManager
 from mqttpi.gpio.pins import parse_pins
-from mqttpi.mqtt.client import (
-    DEFAULT_MAX_QUEUED_MESSAGES,
-    DEFAULT_RECONNECT_MAX_S,
-    DEFAULT_RECONNECT_MIN_S,
-    MqttConnection,
-)
+from mqttpi.mqtt.client import MqttConnection
+from mqttpi.mqtt.factory import base_topic_from, build_mqtt  # noqa: F401 (re-exported)
 
 log = logging.getLogger("mqttpi")
-
-
-def build_mqtt(cfg: Dict[str, Any]) -> MqttConnection:
-    mqtt_cfg = cfg.get("mqtt", {})
-    device_cfg = cfg.get("device", {})
-    device_id = str(device_cfg.get("id", "mqttpi-node"))
-    tls = parse_tls(mqtt_cfg.get("tls"))
-    return MqttConnection(
-        host=str(mqtt_cfg.get("host", "localhost")),
-        port=mqtt_port(mqtt_cfg, tls),
-        tls=tls,
-        username=str(mqtt_cfg.get("username", "")),
-        password=str(mqtt_cfg.get("password", "")),
-        client_id=str(mqtt_cfg.get("client_id", f"mqttpi-{device_id}")),
-        retain=bool(mqtt_cfg.get("retain", True)),
-        qos=int(mqtt_cfg.get("qos", 1)),
-        base_topic=base_topic_from(cfg),
-        keepalive=int(mqtt_cfg.get("keepalive", 60)),
-        reconnect_min_s=int(mqtt_cfg.get("reconnect_min_s", DEFAULT_RECONNECT_MIN_S)),
-        reconnect_max_s=int(mqtt_cfg.get("reconnect_max_s", DEFAULT_RECONNECT_MAX_S)),
-        max_queued_messages=int(
-            mqtt_cfg.get("max_queued_messages", DEFAULT_MAX_QUEUED_MESSAGES)
-        ),
-    )
-
-
-def base_topic_from(cfg: Dict[str, Any]) -> str:
-    """Resolve ``mqtt.base_topic`` (default ``mqttpi/{device.id}``, as documented)."""
-    device_id = str(cfg.get("device", {}).get("id", "mqttpi-node"))
-    return str(cfg.get("mqtt", {}).get("base_topic", f"mqttpi/{device_id}"))
 
 
 def enabled_subsystems(cfg: Dict[str, Any]) -> List[str]:
@@ -101,7 +67,7 @@ class Daemon:
             handlers.append(self._gpio.handle_mqtt_message)
 
         if "bms" in subsystems:
-            self._bms = BmsSubsystem(self.cfg)
+            self._bms = BmsSubsystem(self.cfg, connection=self._mqtt)
 
         def on_message(topic: str, payload: str) -> None:
             for handler in handlers:

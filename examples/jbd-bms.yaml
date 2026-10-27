@@ -38,6 +38,7 @@ bms:
   response_timeout: 2
   poll_interval: 30
   retry_delay: 10
+  # client_id: mqttpi-house-bms-bms   # standalone bridge only; default {mqtt.client_id}-bms
   ha:
     name: "LiFePO4 House Pack"
     device_id: jbd_house_pack
