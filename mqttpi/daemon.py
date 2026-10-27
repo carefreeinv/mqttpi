@@ -17,6 +17,8 @@ from mqttpi.gpio.manager import GpioManager
 from mqttpi.gpio.pins import parse_pins
 from mqttpi.mqtt.client import MqttConnection
 from mqttpi.mqtt.factory import base_topic_from, build_mqtt  # noqa: F401 (re-exported)
+from mqttpi.sensors.config import sensors_configured
+from mqttpi.sensors.subsystem import SensorSubsystem
 
 log = logging.getLogger("mqttpi")
 
@@ -27,6 +29,8 @@ def enabled_subsystems(cfg: Dict[str, Any]) -> List[str]:
         names.append("gpio")
     if bms_enabled(cfg):
         names.append("bms")
+    if sensors_configured(cfg):
+        names.append("sensors")
     return names
 
 
@@ -47,12 +51,13 @@ class Daemon:
         self._mqtt: Optional[MqttConnection] = None
         self._gpio: Optional[GpioManager] = None
         self._bms: Optional[BmsSubsystem] = None
+        self._sensors: Optional[SensorSubsystem] = None
 
     def run(self) -> None:
         subsystems = enabled_subsystems(self.cfg)
         if not subsystems:
             raise RuntimeError(
-                "No enabled subsystems — add pins[] and/or bms.enabled: true to config"
+                "No enabled subsystems — add pins[], sensors, and/or bms.enabled: true to config"
             )
 
         log.info("Starting mqttpi daemon (%s)", ", ".join(subsystems))
@@ -69,6 +74,9 @@ class Daemon:
         if "bms" in subsystems:
             self._bms = BmsSubsystem(self.cfg, connection=self._mqtt)
 
+        if "sensors" in subsystems:
+            self._sensors = SensorSubsystem(self.cfg, connection=self._mqtt)
+
         def on_message(topic: str, payload: str) -> None:
             for handler in handlers:
                 handler(topic, payload)
@@ -84,6 +92,8 @@ class Daemon:
             self._gpio.start()
         if self._bms is not None:
             self._bms.start()
+        if self._sensors is not None:
+            self._sensors.start()
 
         if threading.current_thread() is threading.main_thread():
             signal.signal(signal.SIGINT, self._handle_stop)
@@ -99,11 +109,18 @@ class Daemon:
         """The running GPIO manager (``None`` before ``run()`` or without pins)."""
         return self._gpio
 
+    @property
+    def sensors(self) -> Optional[SensorSubsystem]:
+        """The running sensor subsystem (``None`` before ``run()`` or without sensors)."""
+        return self._sensors
+
     def stop(self) -> None:
         """Ask ``run()`` to shut down (thread-safe; for embedding applications)."""
         self._stop.set()
 
     def shutdown(self) -> None:
+        if self._sensors is not None:
+            self._sensors.stop()
         if self._bms is not None:
             self._bms.stop()
         if self._gpio is not None:
