@@ -46,6 +46,9 @@ mqtt:
   retain: true
   qos: 1
 
+# gpio:
+#   backend: mock    # rpi (default) | mock — mock never touches hardware
+
 buses:
   onewire: { enabled: false, pin: 7 }
   i2c:     { enabled: false, controller: 0, sda: 0, scl: 1 }

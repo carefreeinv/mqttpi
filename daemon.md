@@ -50,6 +50,19 @@ flowchart TD
     loop --> status["Publish status online/offline"]
 ```
 
+## GPIO backend
+
+On a Pi the daemon drives pins through `RPi.GPIO` (installed from `requirements.txt` on ARM Linux only). If the library is missing or cannot initialise, the daemon **exits with code 1** and an error naming the fix — it no longer silently falls back to a mock backend that only pretends to switch outputs.
+
+The mock backend runs only when asked for:
+
+- `--mock-gpio` on the command line, or
+- `gpio: {backend: mock}` in `config.yaml` (`backend` is `rpi` by default).
+
+The startup log shows the active backend and board, e.g. `GPIO backend: rpi (board: rpi4)`; library users can read `GpioManager.backend_name`.
+
+**Raspberry Pi 5 / newer kernels:** `RPi.GPIO` cannot drive the Pi 5 GPIO chip. Install the drop-in replacement `rpi-lgpio` (provides the same `RPi.GPIO` module): `pip uninstall -y RPi.GPIO && pip install rpi-lgpio`.
+
 ## Startup and reconnect
 
 The daemon does **not** need the broker to be up when it starts:
@@ -109,5 +122,7 @@ sudo systemctl enable --now mqttpi.service
 **`No enabled subsystems`** — Add `pins[]` entries and/or `bms.enabled: true`.
 
 **GPIO permission errors** — Run as a user in the `gpio` group, or use `--mock-gpio` to verify MQTT wiring without hardware.
+
+**`GPIO backend 'rpi' unavailable`** — The GPIO library is not installed or cannot open the GPIO chip. Run `pip install -r requirements.txt` on the Pi (or `sudo apt install python3-rpi.gpio` and create the venv with `--system-site-packages`); on a Pi 5 install `rpi-lgpio`. To test without hardware use `--mock-gpio` or `gpio: {backend: mock}`.
 
 **BMS poll failures** — See [jbd-bms.md](examples/jbd-bms.md) wiring FAQ. The standalone bridge (`--once -v`) is the fastest UART diagnostic.

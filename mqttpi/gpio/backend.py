@@ -8,7 +8,14 @@ from typing import Dict, Optional
 log = logging.getLogger(__name__)
 
 
+class GpioBackendUnavailable(RuntimeError):
+    """Raised when the hardware GPIO backend cannot be loaded or initialised."""
+
+
 class GpioBackend:
+    #: Short name of the backend, logged at startup ("rpi", "mock", ...).
+    name = "unknown"
+
     def setup_output(self, pin: int, initial: bool) -> None:
         raise NotImplementedError
 
@@ -26,6 +33,8 @@ class GpioBackend:
 
 
 class MockGpioBackend(GpioBackend):
+    name = "mock"
+
     def __init__(self) -> None:
         self._values: Dict[int, bool] = {}
 
@@ -46,6 +55,8 @@ class MockGpioBackend(GpioBackend):
 
 
 class RPiGpioBackend(GpioBackend):
+    name = "rpi"
+
     def __init__(self) -> None:
         import RPi.GPIO as GPIO
 
@@ -74,12 +85,41 @@ class RPiGpioBackend(GpioBackend):
         self._gpio.cleanup()
 
 
-def create_backend(force_mock: bool = False) -> GpioBackend:
-    if force_mock:
-        log.info("Using mock GPIO backend")
+BACKEND_CHOICES = ("rpi", "mock")
+
+_HINT = (
+    "Install the GPIO library (pip install -r requirements.txt on the Pi, or "
+    "'sudo apt install python3-rpi.gpio'; on a Raspberry Pi 5 use "
+    "'pip install rpi-lgpio' instead), check that the user is in the 'gpio' "
+    "group, or run without hardware using --mock-gpio or 'gpio: {backend: mock}'."
+)
+
+
+def create_backend(
+    force_mock: bool = False,
+    strict: bool = True,
+    backend: Optional[str] = None,
+) -> GpioBackend:
+    """Return the GPIO backend.
+
+    ``force_mock=True`` or ``backend="mock"`` selects the in-memory mock.
+    Otherwise the RPi.GPIO backend is loaded; if that fails and ``strict`` is
+    true (the default) :class:`GpioBackendUnavailable` is raised. With
+    ``strict=False`` the old behavior (warn and fall back to the mock) is kept.
+    """
+    if backend is not None and backend not in BACKEND_CHOICES:
+        raise ValueError(
+            f"gpio.backend must be one of {', '.join(BACKEND_CHOICES)}, got {backend!r}"
+        )
+    if force_mock or backend == "mock":
+        log.info("Using mock GPIO backend (no hardware is switched)")
         return MockGpioBackend()
     try:
         return RPiGpioBackend()
     except (ImportError, RuntimeError) as exc:
+        if strict:
+            raise GpioBackendUnavailable(
+                f"GPIO backend 'rpi' unavailable: {exc}. {_HINT}"
+            ) from exc
         log.warning("RPi.GPIO unavailable (%s) — using mock GPIO backend", exc)
         return MockGpioBackend()

@@ -73,7 +73,7 @@ python3 -m mqttpi -v
 python3 -m mqttpi.bms.bridge --once -v
 ```
 
-See [daemon.md](daemon.md) for subsystem details, `--mock-gpio`, and optional systemd setup (not installed by default).
+See [daemon.md](daemon.md) for subsystem details, `--mock-gpio`, and optional systemd setup (not installed by default). Without a working GPIO library the daemon exits with an error rather than pretending to switch pins; mock mode is opt-in ([GPIO backend](daemon.md#gpio-backend)).
 
 ### 4. Home Assistant
 
