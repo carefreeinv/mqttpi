@@ -8,10 +8,10 @@
 - **Depends on:** ha-numeric-sensor-entities
 
 ## Progress
-- [ ] Step 1: DS18B20 1-Wire driver
-- [ ] Step 2: I2C climate sensor drivers (BME280, SHT3x/SHT4x)
-- [ ] Step 3: Config schema for an I2C ADC (ADS1115-class) under `analog_input`
-- [ ] Step 4: Config schema for a current/voltage monitor (INA219/INA226-class)
+- [x] Step 1: DS18B20 1-Wire driver
+- [x] Step 2: I2C climate sensor drivers (BME280, SHT3x/SHT4x)
+- [x] Step 3: Config schema for an I2C ADC (ADS1115-class) under `analog_input`
+- [x] Step 4: Config schema for a current/voltage monitor (INA219/INA226-class)
 - [ ] Step 5: Optional implementations of the two new schemas
 - [ ] Step 6: Docs and bench test
 - [ ] Done when holds
@@ -62,3 +62,16 @@ Python per `.anchor/conventions.md`: small composable classes, Protocols or narr
 - `pytest -q` passes for all drivers
 - `examples/sensors-i2c-onewire.yaml` runs with fakes
 - New schemas documented with examples; bench results recorded
+
+## Handoff
+
+- Implemented on branch `feature/onewire-i2c-sensor-drivers`, stacked on `feature/pwm-output-driver`.
+- **Steps 1–4 are done**, with unit tests that use a fake w1 sysfs and fake I2C register maps:
+  - The BME280 compensation is checked against the datasheet worked example.
+  - The Sensirion CRC is checked against its reference value.
+- **Step 5 is not started.** The plan says "if the owner approves". The ADS1115 and INA219/INA226 schemas are documented, and those entries are skipped with a warning.
+- **Step 6 (bench) is open:**
+  - DS18B20 on `dtoverlay=w1-gpio`;
+  - BME280 at 0x76;
+  - SHT31 and SHT41 at 0x44;
+  - unplug a sensor during a run and confirm only that entity goes offline.
