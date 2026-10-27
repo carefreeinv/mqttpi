@@ -5,9 +5,11 @@ from __future__ import annotations
 import logging
 import threading
 import time
+from types import MappingProxyType
 from typing import Any, Dict, List, Optional
 
 from mqttpi.gpio.backend import GpioBackend, create_backend
+from mqttpi.gpio.commands import CommandFilter, CommandRequest, run_filters
 from mqttpi.gpio.ha_mqtt import GpioMqttPublisher
 from mqttpi.gpio.pins import PinConfig, parse_pins
 from mqttpi.mqtt.client import MqttConnection
@@ -67,6 +69,8 @@ class GpioManager:
         self._input_thread: Optional[threading.Thread] = None
         self._started = False
         self._announce_lock = threading.Lock()
+        self._command_lock = threading.Lock()
+        self._filters: List[CommandFilter] = []
 
         for pin in self.pins:
             if pin.direction == "output":
@@ -77,7 +81,8 @@ class GpioManager:
     def start(self) -> None:
         for pin in self.pins:
             if pin.direction == "output":
-                self.backend.setup_output(pin.pin, pin.initial)
+                # invert: true → active-low output (logical ON drives the pin LOW).
+                self.backend.setup_output(pin.pin, pin.initial != pin.invert)
                 self._output_state[pin.alias] = pin.initial
             else:
                 self.backend.setup_input(pin.pin, pin.pull)
@@ -135,15 +140,77 @@ class GpioManager:
         if pin is None:
             return
 
-        on = payload == self.publisher.payload_on
         if payload not in (self.publisher.payload_on, self.publisher.payload_off):
             log.warning("Ignoring unknown payload %r on %s", payload, topic)
             return
+        on = payload == self.publisher.payload_on
+        self._apply_command(alias, on, source=topic, payload=payload)
 
-        self.backend.write(pin.pin, on)
-        self._output_state[alias] = on
+    # --- command filters --------------------------------------------------
+
+    def add_command_filter(self, command_filter: CommandFilter) -> None:
+        """Register a filter run before every output change (see ``mqttpi.gpio.commands``)."""
+        self._filters.append(command_filter)
+
+    def remove_command_filter(self, command_filter: CommandFilter) -> None:
+        self._filters.remove(command_filter)
+
+    @property
+    def command_filters(self) -> List[CommandFilter]:
+        return list(self._filters)
+
+    def states(self) -> Dict[str, bool]:
+        """Snapshot of every output and input state, keyed by alias."""
+        return {**self._input_state, **self._output_state}
+
+    def request_output(self, alias: str, on: bool, source: str = "api") -> bool:
+        """Set an output from code, through the same filters as MQTT commands.
+
+        Returns the resulting output state. Raises ``KeyError`` for an unknown alias.
+        """
+        if alias not in self._outputs:
+            raise KeyError(f"Unknown output alias {alias!r}")
+        return self._apply_command(alias, bool(on), source=source)
+
+    def _apply_command(self, alias: str, on: bool, source: str, payload: Optional[str] = None) -> bool:
+        pin = self._outputs[alias]
+        with self._command_lock:
+            current = self._output_state.get(alias, False)
+            if self._filters:
+                request = CommandRequest(
+                    alias=alias,
+                    value=on,
+                    current=current,
+                    source=source,
+                    payload=payload,
+                    states=MappingProxyType(self.states()),
+                )
+                outcome = run_filters(self._filters, request)
+                if not outcome.accepted:
+                    log.info(
+                        "Command %s → %s rejected: %s",
+                        alias,
+                        "ON" if on else "OFF",
+                        "; ".join(outcome.reasons) or "rejected",
+                    )
+                    # Re-publish the true state so HA drops its optimistic toggle.
+                    self.publisher.publish_state(alias, current)
+                    return current
+                if outcome.value != on:
+                    log.info(
+                        "Command %s → %s modified to %s: %s",
+                        alias,
+                        "ON" if on else "OFF",
+                        "ON" if outcome.value else "OFF",
+                        "; ".join(outcome.reasons) or "modified",
+                    )
+                on = bool(outcome.value)
+
+            self.backend.write(pin.pin, on != pin.invert)
+            self._output_state[alias] = on
         self.publisher.publish_state(alias, on)
-        log.debug("Set %s → %s", alias, payload)
+        log.debug("Set %s → %s (%s)", alias, "ON" if on else "OFF", source)
+        return on
 
     def stop(self) -> None:
         self._stop.set()

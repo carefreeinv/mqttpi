@@ -90,6 +90,38 @@ Home Assistant discovery payloads for GPIO entities include `availability_topic`
 
 Library users get the same behavior from `MqttConnection(..., base_topic="mqttpi/node1")` (or `availability_topic=...`). Pass `will=False` to opt out; `payload_available` / `payload_not_available` override `online` / `offline`. Use `add_connect_callback()` to run code (re-subscribe, re-publish) after every reconnect.
 
+## Command filters
+
+Applications that embed mqttpi can inspect every output command **before** any pin changes, and accept, modify, or reject it. This keeps local interlocks and safety limits in charge while mqttpi still handles MQTT, discovery, and GPIO. With no filter registered, behavior is unchanged.
+
+```python
+from mqttpi.config import load_config
+from mqttpi.daemon import Daemon
+from mqttpi.gpio.commands import CommandDecision, block_while, mutually_exclusive
+
+def no_heater_at_night(req):
+    if req.alias == "heater" and req.value and req.states.get("night_mode"):
+        return CommandDecision.reject("night mode")
+    return None  # accept
+
+cfg = load_config("config.yaml")
+Daemon(cfg, command_filters=[
+    mutually_exclusive("actuator_extend", "actuator_retract"),
+    block_while("actuator_extend", "limit_extended"),
+    no_heater_at_night,
+]).run()
+```
+
+- A filter is any callable `filter(request) -> CommandDecision | None`. `CommandRequest` (frozen) carries `alias`, requested `value`, `current` value, `source` (the MQTT topic, or `"api"`), raw `payload`, and a read-only `states` snapshot of every output and input.
+- Return `None` / `CommandDecision.accept()`, `CommandDecision.modify(value, reason)`, or `CommandDecision.reject(reason)`.
+- Filters run in registration order; a modify is passed on to later filters; the **first reject wins**. A filter that raises counts as a reject and is logged (fail safe).
+- After a reject or modify the **actual** output state is re-published, so Home Assistant never shows a state the hardware is not in. Rejections are logged at INFO with the reason.
+- Filters run on the MQTT network thread: keep them fast and non-blocking (no I/O, no sleeps). A filter slower than 50 ms logs a warning.
+- Built-ins: `mutually_exclusive(*aliases)` (at most one ON — e.g. the two direction relays of a reversible motor) and `block_while(alias, input_alias, active=True)` (refuse ON while an input is active; OFF is always allowed).
+- Without the stock daemon: `GpioManager.add_command_filter(f)`; `GpioManager.request_output(alias, on)` sets an output from code through the same filters.
+
+Filters are library-only for now (no config syntax). See [linear-actuator.md](examples/linear-actuator.md) for a runnable example.
+
 ## Standalone BMS bridge
 
 `python3 -m mqttpi.bms.bridge` still works for BMS-only deployments and one-shot tests (`--once`). New installs should prefer `python3 -m mqttpi` so GPIO and BMS can share one process when needed.
