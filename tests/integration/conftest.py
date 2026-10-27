@@ -51,9 +51,12 @@ def _amqtt_executable() -> Optional[str]:
 class Broker:
     """A throw-away local broker on a random port."""
 
-    def __init__(self, workdir: Path, port: Optional[int] = None) -> None:
+    def __init__(self, workdir: Path, port: Optional[int] = None,
+                 tls: Optional[Dict[str, Path]] = None) -> None:
+        """``tls={"crt": ..., "key": ...}`` makes the listener TLS-only."""
         self.workdir = workdir
         self.port = port or free_port()
+        self.tls = tls
         self.proc: Optional[subprocess.Popen] = None
 
     def start(self) -> None:
@@ -61,19 +64,23 @@ class Broker:
         mosquitto = shutil.which("mosquitto")
         if mosquitto:
             conf = self.workdir / f"mosquitto-{self.port}.conf"
-            conf.write_text(f"listener {self.port} 127.0.0.1\nallow_anonymous true\n")
+            text = f"listener {self.port} 127.0.0.1\nallow_anonymous true\n"
+            if self.tls:
+                text += f"certfile {self.tls['crt']}\nkeyfile {self.tls['key']}\n"
+            conf.write_text(text)
             cmd = [mosquitto, "-c", str(conf)]
         else:
             amqtt = _amqtt_executable()
             if amqtt is None:
                 pytest.skip("no MQTT broker available (install mosquitto or amqtt)")
             conf = self.workdir / f"amqtt-{self.port}.yaml"
+            listener = {"type": "tcp", "bind": f"127.0.0.1:{self.port}"}
+            if self.tls:
+                listener.update(ssl=True, certfile=str(self.tls["crt"]), keyfile=str(self.tls["key"]))
             conf.write_text(
                 yaml.safe_dump(
                     {
-                        "listeners": {
-                            "default": {"type": "tcp", "bind": f"127.0.0.1:{self.port}"}
-                        },
+                        "listeners": {"default": listener},
                         "plugins": {
                             "amqtt.plugins.authentication.AnonymousAuthPlugin": {
                                 "allow_anonymous": True
@@ -101,10 +108,12 @@ class Broker:
 class Watcher:
     """Subscribes to a topic filter and records every message (retained or live)."""
 
-    def __init__(self, port: int, topic: str = "#") -> None:
+    def __init__(self, port: int, topic: str = "#", ca_certs: Optional[Path] = None) -> None:
         self.messages: List[Tuple[str, str, bool]] = []
         self._lock = threading.Lock()
         self._client = paho.Client(paho.CallbackAPIVersion.VERSION2, client_id=f"watch-{time.time_ns()}")
+        if ca_certs is not None:
+            self._client.tls_set(ca_certs=str(ca_certs))
         self._client.on_message = self._on_message
         self._client.on_connect = lambda c, *_a: c.subscribe(topic, qos=1)
         self._client.connect("127.0.0.1", port, keepalive=10)

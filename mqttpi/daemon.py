@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence
 
 from mqttpi.bms.subsystem import BmsSubsystem, bms_enabled
-from mqttpi.config import load_config
+from mqttpi.config import load_config, mqtt_port, parse_tls
 from mqttpi.gpio.commands import CommandFilter
 from mqttpi.gpio.manager import GpioManager
 from mqttpi.gpio.pins import parse_pins
@@ -29,9 +29,11 @@ def build_mqtt(cfg: Dict[str, Any]) -> MqttConnection:
     mqtt_cfg = cfg.get("mqtt", {})
     device_cfg = cfg.get("device", {})
     device_id = str(device_cfg.get("id", "mqttpi-node"))
+    tls = parse_tls(mqtt_cfg.get("tls"))
     return MqttConnection(
         host=str(mqtt_cfg.get("host", "localhost")),
-        port=int(mqtt_cfg.get("port", 1883)),
+        port=mqtt_port(mqtt_cfg, tls),
+        tls=tls,
         username=str(mqtt_cfg.get("username", "")),
         password=str(mqtt_cfg.get("password", "")),
         client_id=str(mqtt_cfg.get("client_id", f"mqttpi-{device_id}")),

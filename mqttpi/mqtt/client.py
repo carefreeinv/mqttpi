@@ -4,10 +4,14 @@ from __future__ import annotations
 
 import json
 import logging
+import ssl
+import sys
 import threading
 from typing import Any, Callable, Dict, List, Optional
 
 import paho.mqtt.client as mqtt
+
+from mqttpi.config import TlsSettings
 
 log = logging.getLogger(__name__)
 
@@ -67,6 +71,7 @@ class MqttConnection:
         reconnect_min_s: int = DEFAULT_RECONNECT_MIN_S,
         reconnect_max_s: int = DEFAULT_RECONNECT_MAX_S,
         max_queued_messages: int = DEFAULT_MAX_QUEUED_MESSAGES,
+        tls: Optional[TlsSettings] = None,
     ) -> None:
         _validate_target(host, port)
         if reconnect_min_s < 1 or reconnect_max_s < reconnect_min_s:
@@ -78,6 +83,7 @@ class MqttConnection:
             raise ValueError("mqtt.max_queued_messages must be >= 0 (0 = unbounded)")
         self.host = host
         self.port = port
+        self.tls = tls
         self.username = username
         self.password = password
         self.client_id = client_id
@@ -111,6 +117,9 @@ class MqttConnection:
         self._client.on_connect = self._on_connect
         self._client.on_disconnect = self._on_disconnect
         self._client.on_connect_fail = self._on_connect_fail
+        if tls is not None:
+            # Done up front so bad certificate files fail fast (ValueError).
+            apply_tls(self._client, tls)
 
     # -- configuration -------------------------------------------------
 
@@ -153,12 +162,18 @@ class MqttConnection:
         self._client.connect_async(self.host, self.port, keepalive=self.keepalive)
         self._client.loop_start()
         log.info(
-            "MQTT connecting to %s:%s in background (retry %s-%ss)",
+            "MQTT connecting to %s:%s over %s in background (retry %s-%ss)",
             self.host,
             self.port,
+            self.transport,
             self.reconnect_min_s,
             self.reconnect_max_s,
         )
+
+    @property
+    def transport(self) -> str:
+        """Human-readable transport, e.g. ``TLS (system CA store)`` or ``plain TCP``."""
+        return f"TLS ({self.tls.describe()})" if self.tls is not None else "plain TCP"
 
     def disconnect(self) -> None:
         self._client.loop_stop()
@@ -251,7 +266,19 @@ class MqttConnection:
 
     def _on_connect_fail(self, _client: mqtt.Client, _userdata: object) -> None:
         self._failed_attempts += 1
-        self._note_outage("broker unreachable")
+        # paho calls this from inside its ``except OSError`` block, so the
+        # failure (refused, DNS, TLS handshake, ...) is still available here.
+        exc = sys.exc_info()[1]
+        if isinstance(exc, ssl.SSLError):
+            reason = (
+                f"TLS handshake failed ({exc}) — check mqtt.tls.ca_certs, the broker "
+                "certificate (expiry, hostname), and the system clock"
+            )
+        elif exc is not None:
+            reason = f"unreachable ({exc})"
+        else:
+            reason = "broker unreachable"
+        self._note_outage(reason)
         if self._failed_attempts == WARN_AFTER_FAILED_ATTEMPTS:
             log.warning(
                 "MQTT still not connected to %s:%s after %d attempts — check mqtt.host / mqtt.port",
@@ -287,6 +314,28 @@ class MqttConnection:
             log.warning("Ignoring non-UTF-8 MQTT payload on %s", msg.topic)
             return
         self._message_handler(msg.topic, payload)
+
+
+def apply_tls(client: Any, tls: TlsSettings) -> None:
+    """Configure a paho client for TLS (CA verification always on)."""
+    try:
+        client.tls_set(
+            ca_certs=tls.ca_certs,
+            certfile=tls.certfile,
+            keyfile=tls.keyfile,
+            cert_reqs=ssl.CERT_REQUIRED,
+            tls_version=ssl.PROTOCOL_TLS_CLIENT,
+        )
+    except (ssl.SSLError, OSError) as exc:
+        # Bad PEM / wrong key: a configuration error, fail fast. The message
+        # names files only — never key material.
+        raise ValueError(f"mqtt.tls: cannot load certificates ({tls.describe()}): {exc}") from exc
+    if tls.insecure:
+        client.tls_insecure_set(True)
+        log.warning(
+            "mqtt.tls.insecure is on: broker hostname is NOT verified "
+            "(certificate chain still is). Use only on a lab network."
+        )
 
 
 def _validate_target(host: str, port: int) -> None:

@@ -4,11 +4,13 @@ from __future__ import annotations
 
 import json
 import logging
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 import paho.mqtt.client as mqtt
 
 from mqttpi.bms.jbd_protocol import BmsData
+from mqttpi.config import TlsSettings
+from mqttpi.mqtt.client import apply_tls
 
 log = logging.getLogger(__name__)
 
@@ -26,6 +28,7 @@ class BmsMqttPublisher:
         device_id: str = "jbd_bms",
         discovery_prefix: str = "homeassistant",
         retain: bool = True,
+        tls: Optional[TlsSettings] = None,
     ) -> None:
         self.host = host
         self.port = port
@@ -45,6 +48,9 @@ class BmsMqttPublisher:
             self._client.username_pw_set(username, password or None)
         self._discovery_done = False
         self._client.on_connect = self._on_connect
+        self.tls = tls
+        if tls is not None:
+            apply_tls(self._client, tls)
 
     def connect(self, blocking: bool = False) -> None:
         """Connect to the broker.
