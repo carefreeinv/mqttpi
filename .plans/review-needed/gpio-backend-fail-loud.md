@@ -8,10 +8,10 @@
 - **Depends on:** mqtt-availability-lwt
 
 ## Progress
-- [ ] Step 1: Strict backend selection in `create_backend`
-- [ ] Step 2: Declare the GPIO library dependency
-- [ ] Step 3: Clear startup log of the active backend
-- [ ] Step 4: Docs and changelog
+- [x] Step 1: Strict backend selection in `create_backend`
+- [x] Step 2: Declare the GPIO library dependency
+- [x] Step 3: Clear startup log of the active backend
+- [x] Step 4: Docs and changelog
 - [ ] Done when holds
 
 ## Goal
@@ -58,3 +58,11 @@ Python per `.anchor/conventions.md`: small composable classes, Protocols or narr
 - `pytest -q` passes, including the missing-library test
 - Starting without the GPIO library and without `--mock-gpio` exits non-zero with a clear message
 - Docs and changelog updated
+
+## Handoff
+- Branch `feature/gpio-backend-fail-loud`, stacked on `feature/mqtt-resilient-connect`.
+- `create_backend(force_mock=False, strict=True, backend=None)` raises `GpioBackendUnavailable` (a `RuntimeError`, so the daemon logs it and exits 1) on import or init failure; the message names `--mock-gpio`, `gpio.backend: mock`, the `gpio` group, and `rpi-lgpio` for Pi 5.
+- New config key `gpio.backend` (`rpi` default | `mock`); `GpioManager.backend_name`; startup log `GPIO backend: <name> (board: <board>)`.
+- Library choice: `RPi.GPIO` stays the declared dependency (marker: Linux + armv6l/armv7l/aarch64) because it is what the backend imports and what Raspberry Pi OS ships; `rpi-lgpio` documented as the drop-in for Pi 5 / newer kernels (same module name, so they cannot both be listed).
+- Breaking change noted in CHANGELOG: the silent mock fallback is gone (`strict=False` restores it for library users).
+- Verified: `pytest -q` 51 passed; `pip install --dry-run -r requirements.txt` on x86 skips RPi.GPIO; docs build OK. Not verified: install on ARM (needs a Pi).
