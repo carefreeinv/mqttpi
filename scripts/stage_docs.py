@@ -127,6 +127,7 @@ def stage_examples() -> None:
         "linear-actuator.md",
         "linear-actuator-pwm.md",
         "power-monitor.md",
+        "can-frames.md",
         "pizero-relays.md",
     ]
     protocols = [
