@@ -49,8 +49,8 @@ MCP23017 addresses are configurable via A0–A2 (eight devices per I2C bus: `0x2
 **Can I mix native GPIO and expanders?**  
 Yes — add `pins[]` with `bcm:` (native) and `expander:` entries in one config.
 
-**Pi 4 instead of Pico W?**  
-Change `board: pi4`, set `i2c.sda` / `i2c.scl` to your header pins (often GPIO2/GPIO3 on bus 1), and keep the same MCP23017 layout.
+**Pi 4 instead of Pico W?**
+Set `device.board: pi4`. The Linux daemon uses I2C bus 1 (GPIO 2/3) by default; select another bus with `expanders.mcp23017.bus`. Keep the same MCP23017 layout. Enable I2C with `raspi-config` and `pip install smbus2`, then check with `i2cdetect -y 1` (expect `20` and `21`).
 
-**Daemon status?**  
-GPIO expander support is part of the mqttpi config contract; verify runtime support before production deploy.
+**Daemon status?**
+Implemented in the Linux daemon ([daemon.md](../daemon.md#i2c-gpio-expanders-mcp23017)). Inputs are polled, outputs are re-applied after a chip reset, and `--mock-gpio` runs this example with in-memory chips. Most relay boards are active-low, so add `invert: true` to each relay if yours are.

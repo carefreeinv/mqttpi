@@ -15,7 +15,7 @@ PWM_MODES = ("software", "hardware")
 
 @dataclass
 class PinConfig:
-    pin: int
+    pin: Any  # BCM number (int) or mcp23017.ExpanderPin
     alias: str
     direction: str
     initial: bool = False
@@ -54,12 +54,14 @@ def parse_pins(cfg: Dict[str, Any]) -> List[PinConfig]:
                 direction,
             )
             continue
-        ha = entry.get("ha", {}) or {}
+        # ``homeassistant:``/``default:`` are the spellings used by the expander
+        # examples; ``ha:``/``initial:`` win when both are given.
+        ha = entry.get("ha", entry.get("homeassistant", {})) or {}
         pin = PinConfig(
-            pin=int(entry["pin"]),
+            pin=_pin_ref(entry),
             alias=str(entry["alias"]),
             direction=direction,
-            initial=bool(entry.get("initial", False)),
+            initial=bool(entry.get("initial", entry.get("default", False))),
             pull=entry.get("pull"),
             invert=bool(entry.get("invert", False)),
             debounce_ms=int(entry.get("debounce_ms", 50)),
@@ -68,9 +70,37 @@ def parse_pins(cfg: Dict[str, Any]) -> List[PinConfig]:
             ha_device_class=str(ha.get("device_class", "")),
         )
         if direction == "pwm_output":
+            if not isinstance(pin.pin, int):
+                raise ValueError(f"pins[{pin.alias}]: pwm_output is not available on expander pins")
             _parse_pwm(pin, entry, ha)
         pins.append(pin)
+    seen: Dict[Any, str] = {}
+    for p in pins:
+        if not isinstance(p.pin, int):
+            if p.pin in seen:
+                raise ValueError(f"pins[{p.alias}]: expander pin {p.pin} already used by {seen[p.pin]}")
+            seen[p.pin] = p.alias
     return pins
+
+
+def _pin_ref(entry: Dict[str, Any]):
+    """Native BCM number (``pin:``, alias ``bcm:``) or ``expander: {chip, pin}``."""
+    from mqttpi.gpio.mcp23017 import ExpanderPin, parse_expander_pin
+    from mqttpi.sensors.i2c import parse_address
+
+    alias = entry.get("alias")
+    exp = entry.get("expander")
+    if exp is not None:
+        if "pin" in entry or "bcm" in entry:
+            raise ValueError(f"pins[{alias}]: use either 'pin' or 'expander', not both")
+        if not isinstance(exp, dict) or "chip" not in exp or "pin" not in exp:
+            raise ValueError(f"pins[{alias}]: expander needs {{chip: <i2c address>, pin: 0-15}}")
+        return ExpanderPin(parse_address(exp["chip"], 0x20), parse_expander_pin(exp["pin"], f"pins[{alias}]"))
+    if "pin" in entry:
+        return int(entry["pin"])
+    if "bcm" in entry:
+        return int(entry["bcm"])
+    raise KeyError("pin")  # unchanged error type for a missing pin
 
 def _parse_pwm(pin: PinConfig, entry: Dict[str, Any], ha: Dict[str, Any]) -> None:
     where = f"pins[{pin.alias}]"
