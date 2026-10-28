@@ -48,9 +48,11 @@ def test_gpio_discovery_includes_availability_topic(fake_paho) -> None:
 
     conn = build_mqtt(CFG)
     manager = GpioManager(CFG, conn, mock_gpio=True)
+    conn.connect()
     manager.start()
     try:
         client = fake_paho.last
+        client.simulate_connect()
         switch = json.loads(client.last_payload("homeassistant/switch/node1_relay_1/config"))
         sensor = json.loads(client.last_payload("homeassistant/binary_sensor/node1_door/config"))
         assert switch["availability_topic"] == "mqttpi/node1/status"

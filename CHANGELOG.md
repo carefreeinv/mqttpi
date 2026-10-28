@@ -10,6 +10,8 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 - **MQTT Last Will** — `MqttConnection` registers a retained `offline` will on `{base_topic}/status` before connecting, so a crashed or disconnected node is marked offline by the broker; `online` is re-published after every successful (re)connect ([daemon.md](daemon.md#availability-and-last-will))
 - `mqtt.keepalive` config key (default `60`, unchanged)
+- **Resilient MQTT connect** — the daemon and `MqttConnection` start when the broker is unreachable, keep GPIO/BMS work running, and connect in the background with backoff (`mqtt.reconnect_min_s` / `mqtt.reconnect_max_s`, defaults 1 / 60 s); subscriptions, availability, HA discovery, and pin states are re-published after every reconnect; offline queue bounded by `mqtt.max_queued_messages` (default 1000) ([daemon.md](daemon.md#startup-and-reconnect))
+- `MqttConnection.wait_connected(timeout)`
 - `MqttConnection` options `base_topic`, `availability_topic`, `will`, `payload_available`, `payload_not_available`, `keepalive`, plus `add_connect_callback()` and `is_connected`
 - GPIO switch / binary_sensor discovery payloads include `availability_topic`
 - Test harness: `requirements-dev.txt`, `pytest.ini`, fake paho client (`tests/`), broker integration tests (`tests/integration/`, use `mosquitto` or `amqtt`, skipped if neither is installed)
@@ -28,6 +30,9 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
+- `MqttConnection.connect()` no longer raises when the broker is unreachable (uses paho `connect_async`); configuration errors raise `ValueError` from the constructor
+- `BmsMqttPublisher.connect()` is non-blocking by default (`blocking=True` for one-shot use; `mqttpi.bms.bridge --once` keeps failing fast)
+- HA discovery for GPIO is now published when `mqtt.homeassistant` is omitted entirely (discovery is documented as on by default)
 - Availability messages on `{base_topic}/status` are always retained (previously followed `mqtt.retain`)
 - Daemon availability topic now defaults to `mqttpi/{device.id}/status` when `mqtt.base_topic` is unset, matching the documented topic root and the GPIO topics (previously `mqttpi/status`)
 

@@ -33,6 +33,9 @@ mqtt:
   port: 1883
   tls: false
   keepalive: 60          # seconds; broker fires the offline Last Will after ~1.5x
+  reconnect_min_s: 1     # background connect/reconnect backoff (broker may be down at boot)
+  reconnect_max_s: 60
+  max_queued_messages: 1000  # qos>0 messages buffered while disconnected
   base_topic: mqttpi/change-me-unique-id
   client_id: mqttpi-change-me-unique-id
   homeassistant:
