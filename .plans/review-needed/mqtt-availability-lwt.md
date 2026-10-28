@@ -8,12 +8,12 @@
 - **Depends on:** none
 
 ## Progress
-- [ ] Step 1: Bootstrap a minimal pytest harness with a fake MQTT client
-- [ ] Step 2: Set the Last Will in `MqttConnection` before connecting
-- [ ] Step 3: Publish `online` again on every (re)connect
-- [ ] Step 4: Daemon wiring and docs
-- [ ] Step 5: Broker test: kill -9 yields retained `offline`
-- [ ] Done when holds
+- [x] Step 1: Bootstrap a minimal pytest harness with a fake MQTT client
+- [x] Step 2: Set the Last Will in `MqttConnection` before connecting
+- [x] Step 3: Publish `online` again on every (re)connect
+- [x] Step 4: Daemon wiring and docs
+- [x] Step 5: Broker test: kill -9 yields retained `offline`
+- [x] Done when holds
 
 ## Goal
 When an mqttpi process crashes, loses power, or drops off the network, the broker publishes the retained availability message `offline` on `{base_topic}/status`, so Home Assistant and any downstream consumer stop trusting stale state. Today `offline` is only published on a clean shutdown, so a dead node stays retained `online` indefinitely.
@@ -60,3 +60,12 @@ Python per `.anchor/conventions.md`: small composable classes, Protocols or narr
 - `pytest -q` passes, including will and reconnect tests
 - Integration test shows retained `offline` after an abrupt kill and `online` after restart
 - Docs and `CHANGELOG.md` `[Unreleased]` updated; docs build passes
+
+## Handoff
+
+- **Branch:** `feature/mqtt-availability-lwt` (PR against `main`)
+- **Result:** Last Will registered before connect; `online` re-published from `on_connect` on every (re)connect; daemon still publishes `offline` on clean stop. GPIO discovery payloads now carry `availability_topic`.
+- **Verify:** `python3 -m venv .venv && .venv/bin/pip install -r requirements-dev.txt amqtt && .venv/bin/pytest -q` (integration tests use `mosquitto` if on PATH, else `amqtt`; skipped if neither).
+- **Integration evidence:** `tests/integration/test_availability.py` — `kill -9` → retained `offline`; restart → retained `online`; `SIGTERM` → `offline`, exit 0.
+- **Notes for review:** availability is now always retained (was `mqtt.retain`); daemon availability topic default aligned with documented `mqttpi/{device.id}`. Pre-existing: discovery only publishes when `mqtt.homeassistant` is a non-empty mapping — fixed in `mqtt-resilient-connect`.
+- **Deferred:** CI job for the integration tests (left to `test-suite`).

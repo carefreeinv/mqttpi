@@ -50,6 +50,22 @@ flowchart TD
     loop --> status["Publish status online/offline"]
 ```
 
+## Availability and Last Will
+
+`{base_topic}/status` is the node's availability topic (retained):
+
+| Event | Published by | Payload |
+|-------|--------------|---------|
+| Every successful connect or reconnect | daemon | `online` |
+| Clean stop (Ctrl+C, `SIGTERM`, `systemctl stop`) | daemon | `offline` |
+| Crash, `kill -9`, power loss, network drop | **broker** (MQTT Last Will) | `offline` |
+
+The daemon registers the Last Will before connecting, so a node that disappears without a clean disconnect is marked `offline` by the broker once it notices the connection is gone (immediately when the TCP connection closes; otherwise after about 1.5 × `mqtt.keepalive` seconds, default 60). Lower `mqtt.keepalive` for faster detection of silent network drops.
+
+Home Assistant discovery payloads for GPIO entities include `availability_topic`, so switches and binary sensors show as *unavailable* while the node is offline.
+
+Library users get the same behavior from `MqttConnection(..., base_topic="mqttpi/node1")` (or `availability_topic=...`). Pass `will=False` to opt out; `payload_available` / `payload_not_available` override `online` / `offline`. Use `add_connect_callback()` to run code (re-subscribe, re-publish) after every reconnect.
+
 ## Standalone BMS bridge
 
 `python3 -m mqttpi.bms.bridge` still works for BMS-only deployments and one-shot tests (`--once`). New installs should prefer `python3 -m mqttpi` so GPIO and BMS can share one process when needed.

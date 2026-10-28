@@ -45,6 +45,8 @@ For ready-made layouts, prefer [`examples/README.md`](examples/README.md) — ea
 | HA integration | Discovery **on**, payloads **ON/OFF**, state **retained** |
 | Secrets | **`secrets.yaml`** merged at runtime (gitignored) |
 | Topic root | `mqttpi/{device.id}` unless overridden |
+| Availability | `{base_topic}/status` retained `online`/`offline`; MQTT Last Will marks a crashed node `offline` |
+| `mqtt.keepalive` | `60` s — broker declares a silent node dead after ~1.5× this |
 
 ---
 

@@ -30,7 +30,15 @@ def build_mqtt(cfg: Dict[str, Any]) -> MqttConnection:
         client_id=str(mqtt_cfg.get("client_id", f"mqttpi-{device_id}")),
         retain=bool(mqtt_cfg.get("retain", True)),
         qos=int(mqtt_cfg.get("qos", 1)),
+        base_topic=base_topic_from(cfg),
+        keepalive=int(mqtt_cfg.get("keepalive", 60)),
     )
+
+
+def base_topic_from(cfg: Dict[str, Any]) -> str:
+    """Resolve ``mqtt.base_topic`` (default ``mqttpi/{device.id}``, as documented)."""
+    device_id = str(cfg.get("device", {}).get("id", "mqttpi-node"))
+    return str(cfg.get("mqtt", {}).get("base_topic", f"mqttpi/{device_id}"))
 
 
 def enabled_subsystems(cfg: Dict[str, Any]) -> List[str]:
@@ -79,11 +87,9 @@ class Daemon:
                 handler(topic, payload)
 
         self._mqtt.set_message_handler(on_message)
+        # Availability "online" is published by MqttConnection on every
+        # successful (re)connect; the Last Will covers abrupt exits.
         self._mqtt.connect()
-
-        mqtt_cfg = self.cfg.get("mqtt", {})
-        base_topic = str(mqtt_cfg.get("base_topic", "mqttpi"))
-        self._mqtt.publish_availability(base_topic, True)
 
         if self._gpio is not None:
             self._gpio.start()
@@ -104,9 +110,7 @@ class Daemon:
         if self._gpio is not None:
             self._gpio.stop()
         if self._mqtt is not None:
-            mqtt_cfg = self.cfg.get("mqtt", {})
-            base_topic = str(mqtt_cfg.get("base_topic", "mqttpi"))
-            self._mqtt.publish_availability(base_topic, False)
+            self._mqtt.publish_availability(online=False)
             self._mqtt.disconnect()
         log.info("mqttpi daemon stopped")
 
