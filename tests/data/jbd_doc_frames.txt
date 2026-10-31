@@ -1,0 +1,6 @@
+# Example frames from the public JBD "Smart BMS protocol V4" document.
+# host: request basic info (0x03), request cell voltages (0x04)
+request_hwinfo DD A5 03 00 FF FD 77
+request_cellinfo DD A5 04 00 FF FC 77
+# BMS response to 0x03: 58.88 V, 0 A, 7.2/10 Ah, 0 cycles, SOC 72 %, FETs on, 15 cells, 20.3/21.5 degC
+response_hwinfo DD 03 00 1B 17 00 00 00 02 D0 03 E8 00 00 20 78 00 00 00 00 00 00 10 48 03 0F 02 0B 76 0B 82 FB FF 77

@@ -181,7 +181,12 @@ mkdocs serve
 ```bash
 # Tests (integration tests use mosquitto if on PATH, else the amqtt broker from requirements-dev.txt)
 python3 -m venv .venv && .venv/bin/pip install -r requirements-dev.txt
-.venv/bin/python -m pytest -q
+.venv/bin/python -m pytest -q                       # everything (~40 s)
+.venv/bin/python -m pytest -q -m "not integration"  # hardware- and broker-free unit suite (~5 s)
+.venv/bin/python -m pytest -q --cov                 # with coverage
+.venv/bin/ruff check .                              # lint (minimal rule set, see pyproject.toml)
+# HA discovery payloads are snapshot-tested (tests/snapshots/); after an intended change:
+MQTTPI_UPDATE_SNAPSHOTS=1 .venv/bin/python -m pytest -q tests/test_discovery.py   # then review the diff
 
 # Wheel
 .venv/bin/pip install build && .venv/bin/python -m build   # dist/mqttpi-<version>-py3-none-any.whl

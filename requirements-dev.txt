@@ -1,4 +1,6 @@
 -r requirements.txt
 pytest>=7.0
+pytest-cov>=4.0
+ruff>=0.4
 # Pure-Python MQTT broker for the integration tests (mosquitto on PATH is used if present).
 amqtt>=0.11; python_version >= "3.10"

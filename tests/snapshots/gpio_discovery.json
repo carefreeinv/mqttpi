@@ -1,0 +1,37 @@
+{
+  "homeassistant/binary_sensor/node1_door/config": {
+    "availability_topic": "mqttpi/node1/status",
+    "device": {
+      "identifiers": [
+        "node1"
+      ],
+      "manufacturer": "mqttpi",
+      "model": "pi4",
+      "name": "Test Node"
+    },
+    "device_class": "door",
+    "name": "Door",
+    "payload_off": "OFF",
+    "payload_on": "ON",
+    "state_topic": "mqttpi/node1/gpio/door/state",
+    "unique_id": "node1_door"
+  },
+  "homeassistant/switch/node1_relay_1/config": {
+    "availability_topic": "mqttpi/node1/status",
+    "command_topic": "mqttpi/node1/gpio/relay_1/set",
+    "device": {
+      "identifiers": [
+        "node1"
+      ],
+      "manufacturer": "mqttpi",
+      "model": "pi4",
+      "name": "Test Node"
+    },
+    "icon": "mdi:power-socket",
+    "name": "Relay 1",
+    "payload_off": "OFF",
+    "payload_on": "ON",
+    "state_topic": "mqttpi/node1/gpio/relay_1/state",
+    "unique_id": "node1_relay_1"
+  }
+}

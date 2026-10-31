@@ -1,0 +1,715 @@
+{
+  "homeassistant/binary_sensor/pack1_balancing/config": {
+    "availability": [
+      {
+        "topic": "mqttpi/node1/status"
+      },
+      {
+        "topic": "mqttpi/node1/bms/status"
+      }
+    ],
+    "availability_mode": "all",
+    "device": {
+      "connections": [
+        [
+          "serial",
+          "uart"
+        ]
+      ],
+      "identifiers": [
+        "pack1"
+      ],
+      "manufacturer": "JBD / Jiabaida",
+      "model": "JBD BMS",
+      "name": "Pack"
+    },
+    "icon": "mdi:scale-balance",
+    "name": "Pack Balancing",
+    "payload_off": "OFF",
+    "payload_on": "ON",
+    "state_topic": "mqttpi/node1/bms/balancing/state",
+    "unique_id": "pack1_balancing"
+  },
+  "homeassistant/binary_sensor/pack1_charging/config": {
+    "availability": [
+      {
+        "topic": "mqttpi/node1/status"
+      },
+      {
+        "topic": "mqttpi/node1/bms/status"
+      }
+    ],
+    "availability_mode": "all",
+    "device": {
+      "connections": [
+        [
+          "serial",
+          "uart"
+        ]
+      ],
+      "identifiers": [
+        "pack1"
+      ],
+      "manufacturer": "JBD / Jiabaida",
+      "model": "JBD BMS",
+      "name": "Pack"
+    },
+    "icon": "mdi:battery_charging",
+    "name": "Pack Charging",
+    "payload_off": "OFF",
+    "payload_on": "ON",
+    "state_topic": "mqttpi/node1/bms/charging/state",
+    "unique_id": "pack1_charging"
+  },
+  "homeassistant/binary_sensor/pack1_discharging/config": {
+    "availability": [
+      {
+        "topic": "mqttpi/node1/status"
+      },
+      {
+        "topic": "mqttpi/node1/bms/status"
+      }
+    ],
+    "availability_mode": "all",
+    "device": {
+      "connections": [
+        [
+          "serial",
+          "uart"
+        ]
+      ],
+      "identifiers": [
+        "pack1"
+      ],
+      "manufacturer": "JBD / Jiabaida",
+      "model": "JBD BMS",
+      "name": "Pack"
+    },
+    "icon": "mdi:battery-arrow-down",
+    "name": "Pack Discharging",
+    "payload_off": "OFF",
+    "payload_on": "ON",
+    "state_topic": "mqttpi/node1/bms/discharging/state",
+    "unique_id": "pack1_discharging"
+  },
+  "homeassistant/binary_sensor/pack1_protection_active/config": {
+    "availability": [
+      {
+        "topic": "mqttpi/node1/status"
+      },
+      {
+        "topic": "mqttpi/node1/bms/status"
+      }
+    ],
+    "availability_mode": "all",
+    "device": {
+      "connections": [
+        [
+          "serial",
+          "uart"
+        ]
+      ],
+      "identifiers": [
+        "pack1"
+      ],
+      "manufacturer": "JBD / Jiabaida",
+      "model": "JBD BMS",
+      "name": "Pack"
+    },
+    "icon": "mdi:shield-alert",
+    "name": "Pack Protection Active",
+    "payload_off": "OFF",
+    "payload_on": "ON",
+    "state_topic": "mqttpi/node1/bms/protection_active/state",
+    "unique_id": "pack1_protection_active"
+  },
+  "homeassistant/sensor/pack1_avg_cell_voltage/config": {
+    "availability": [
+      {
+        "topic": "mqttpi/node1/status"
+      },
+      {
+        "topic": "mqttpi/node1/bms/status"
+      }
+    ],
+    "availability_mode": "all",
+    "device": {
+      "connections": [
+        [
+          "serial",
+          "uart"
+        ]
+      ],
+      "identifiers": [
+        "pack1"
+      ],
+      "manufacturer": "JBD / Jiabaida",
+      "model": "JBD BMS",
+      "name": "Pack"
+    },
+    "device_class": "voltage",
+    "name": "Pack Average Cell Voltage",
+    "state_class": "measurement",
+    "state_topic": "mqttpi/node1/bms/avg_cell_voltage/state",
+    "unique_id": "pack1_avg_cell_voltage",
+    "unit_of_measurement": "V"
+  },
+  "homeassistant/sensor/pack1_capacity_remaining/config": {
+    "availability": [
+      {
+        "topic": "mqttpi/node1/status"
+      },
+      {
+        "topic": "mqttpi/node1/bms/status"
+      }
+    ],
+    "availability_mode": "all",
+    "device": {
+      "connections": [
+        [
+          "serial",
+          "uart"
+        ]
+      ],
+      "identifiers": [
+        "pack1"
+      ],
+      "manufacturer": "JBD / Jiabaida",
+      "model": "JBD BMS",
+      "name": "Pack"
+    },
+    "device_class": "energy_storage",
+    "name": "Pack Capacity Remaining",
+    "state_class": "measurement",
+    "state_topic": "mqttpi/node1/bms/capacity_remaining_ah/state",
+    "unique_id": "pack1_capacity_remaining",
+    "unit_of_measurement": "Ah"
+  },
+  "homeassistant/sensor/pack1_cell_1_voltage/config": {
+    "availability": [
+      {
+        "topic": "mqttpi/node1/status"
+      },
+      {
+        "topic": "mqttpi/node1/bms/status"
+      }
+    ],
+    "availability_mode": "all",
+    "device": {
+      "connections": [
+        [
+          "serial",
+          "uart"
+        ]
+      ],
+      "identifiers": [
+        "pack1"
+      ],
+      "manufacturer": "JBD / Jiabaida",
+      "model": "JBD BMS",
+      "name": "Pack"
+    },
+    "device_class": "voltage",
+    "name": "Pack Cell 1 Voltage",
+    "state_class": "measurement",
+    "state_topic": "mqttpi/node1/bms/cell_1/state",
+    "unique_id": "pack1_cell_1_voltage",
+    "unit_of_measurement": "V"
+  },
+  "homeassistant/sensor/pack1_cell_2_voltage/config": {
+    "availability": [
+      {
+        "topic": "mqttpi/node1/status"
+      },
+      {
+        "topic": "mqttpi/node1/bms/status"
+      }
+    ],
+    "availability_mode": "all",
+    "device": {
+      "connections": [
+        [
+          "serial",
+          "uart"
+        ]
+      ],
+      "identifiers": [
+        "pack1"
+      ],
+      "manufacturer": "JBD / Jiabaida",
+      "model": "JBD BMS",
+      "name": "Pack"
+    },
+    "device_class": "voltage",
+    "name": "Pack Cell 2 Voltage",
+    "state_class": "measurement",
+    "state_topic": "mqttpi/node1/bms/cell_2/state",
+    "unique_id": "pack1_cell_2_voltage",
+    "unit_of_measurement": "V"
+  },
+  "homeassistant/sensor/pack1_cell_3_voltage/config": {
+    "availability": [
+      {
+        "topic": "mqttpi/node1/status"
+      },
+      {
+        "topic": "mqttpi/node1/bms/status"
+      }
+    ],
+    "availability_mode": "all",
+    "device": {
+      "connections": [
+        [
+          "serial",
+          "uart"
+        ]
+      ],
+      "identifiers": [
+        "pack1"
+      ],
+      "manufacturer": "JBD / Jiabaida",
+      "model": "JBD BMS",
+      "name": "Pack"
+    },
+    "device_class": "voltage",
+    "name": "Pack Cell 3 Voltage",
+    "state_class": "measurement",
+    "state_topic": "mqttpi/node1/bms/cell_3/state",
+    "unique_id": "pack1_cell_3_voltage",
+    "unit_of_measurement": "V"
+  },
+  "homeassistant/sensor/pack1_cell_4_voltage/config": {
+    "availability": [
+      {
+        "topic": "mqttpi/node1/status"
+      },
+      {
+        "topic": "mqttpi/node1/bms/status"
+      }
+    ],
+    "availability_mode": "all",
+    "device": {
+      "connections": [
+        [
+          "serial",
+          "uart"
+        ]
+      ],
+      "identifiers": [
+        "pack1"
+      ],
+      "manufacturer": "JBD / Jiabaida",
+      "model": "JBD BMS",
+      "name": "Pack"
+    },
+    "device_class": "voltage",
+    "name": "Pack Cell 4 Voltage",
+    "state_class": "measurement",
+    "state_topic": "mqttpi/node1/bms/cell_4/state",
+    "unique_id": "pack1_cell_4_voltage",
+    "unit_of_measurement": "V"
+  },
+  "homeassistant/sensor/pack1_current/config": {
+    "availability": [
+      {
+        "topic": "mqttpi/node1/status"
+      },
+      {
+        "topic": "mqttpi/node1/bms/status"
+      }
+    ],
+    "availability_mode": "all",
+    "device": {
+      "connections": [
+        [
+          "serial",
+          "uart"
+        ]
+      ],
+      "identifiers": [
+        "pack1"
+      ],
+      "manufacturer": "JBD / Jiabaida",
+      "model": "JBD BMS",
+      "name": "Pack"
+    },
+    "device_class": "current",
+    "icon": "mdi:current-dc",
+    "name": "Pack Current",
+    "state_class": "measurement",
+    "state_topic": "mqttpi/node1/bms/current/state",
+    "unique_id": "pack1_current",
+    "unit_of_measurement": "A"
+  },
+  "homeassistant/sensor/pack1_cycle_count/config": {
+    "availability": [
+      {
+        "topic": "mqttpi/node1/status"
+      },
+      {
+        "topic": "mqttpi/node1/bms/status"
+      }
+    ],
+    "availability_mode": "all",
+    "device": {
+      "connections": [
+        [
+          "serial",
+          "uart"
+        ]
+      ],
+      "identifiers": [
+        "pack1"
+      ],
+      "manufacturer": "JBD / Jiabaida",
+      "model": "JBD BMS",
+      "name": "Pack"
+    },
+    "icon": "mdi:counter",
+    "name": "Pack Cycle Count",
+    "state_class": "total_increasing",
+    "state_topic": "mqttpi/node1/bms/cycle_count/state",
+    "unique_id": "pack1_cycle_count"
+  },
+  "homeassistant/sensor/pack1_delta_cell_voltage/config": {
+    "availability": [
+      {
+        "topic": "mqttpi/node1/status"
+      },
+      {
+        "topic": "mqttpi/node1/bms/status"
+      }
+    ],
+    "availability_mode": "all",
+    "device": {
+      "connections": [
+        [
+          "serial",
+          "uart"
+        ]
+      ],
+      "identifiers": [
+        "pack1"
+      ],
+      "manufacturer": "JBD / Jiabaida",
+      "model": "JBD BMS",
+      "name": "Pack"
+    },
+    "device_class": "voltage",
+    "name": "Pack Cell Voltage Delta",
+    "state_class": "measurement",
+    "state_topic": "mqttpi/node1/bms/delta_cell_voltage/state",
+    "unique_id": "pack1_delta_cell_voltage",
+    "unit_of_measurement": "V"
+  },
+  "homeassistant/sensor/pack1_max_cell_voltage/config": {
+    "availability": [
+      {
+        "topic": "mqttpi/node1/status"
+      },
+      {
+        "topic": "mqttpi/node1/bms/status"
+      }
+    ],
+    "availability_mode": "all",
+    "device": {
+      "connections": [
+        [
+          "serial",
+          "uart"
+        ]
+      ],
+      "identifiers": [
+        "pack1"
+      ],
+      "manufacturer": "JBD / Jiabaida",
+      "model": "JBD BMS",
+      "name": "Pack"
+    },
+    "device_class": "voltage",
+    "name": "Pack Max Cell Voltage",
+    "state_class": "measurement",
+    "state_topic": "mqttpi/node1/bms/max_cell_voltage/state",
+    "unique_id": "pack1_max_cell_voltage",
+    "unit_of_measurement": "V"
+  },
+  "homeassistant/sensor/pack1_min_cell_voltage/config": {
+    "availability": [
+      {
+        "topic": "mqttpi/node1/status"
+      },
+      {
+        "topic": "mqttpi/node1/bms/status"
+      }
+    ],
+    "availability_mode": "all",
+    "device": {
+      "connections": [
+        [
+          "serial",
+          "uart"
+        ]
+      ],
+      "identifiers": [
+        "pack1"
+      ],
+      "manufacturer": "JBD / Jiabaida",
+      "model": "JBD BMS",
+      "name": "Pack"
+    },
+    "device_class": "voltage",
+    "name": "Pack Min Cell Voltage",
+    "state_class": "measurement",
+    "state_topic": "mqttpi/node1/bms/min_cell_voltage/state",
+    "unique_id": "pack1_min_cell_voltage",
+    "unit_of_measurement": "V"
+  },
+  "homeassistant/sensor/pack1_nominal_capacity/config": {
+    "availability": [
+      {
+        "topic": "mqttpi/node1/status"
+      },
+      {
+        "topic": "mqttpi/node1/bms/status"
+      }
+    ],
+    "availability_mode": "all",
+    "device": {
+      "connections": [
+        [
+          "serial",
+          "uart"
+        ]
+      ],
+      "identifiers": [
+        "pack1"
+      ],
+      "manufacturer": "JBD / Jiabaida",
+      "model": "JBD BMS",
+      "name": "Pack"
+    },
+    "device_class": "energy_storage",
+    "name": "Pack Nominal Capacity",
+    "state_class": "measurement",
+    "state_topic": "mqttpi/node1/bms/nominal_capacity_ah/state",
+    "unique_id": "pack1_nominal_capacity",
+    "unit_of_measurement": "Ah"
+  },
+  "homeassistant/sensor/pack1_power/config": {
+    "availability": [
+      {
+        "topic": "mqttpi/node1/status"
+      },
+      {
+        "topic": "mqttpi/node1/bms/status"
+      }
+    ],
+    "availability_mode": "all",
+    "device": {
+      "connections": [
+        [
+          "serial",
+          "uart"
+        ]
+      ],
+      "identifiers": [
+        "pack1"
+      ],
+      "manufacturer": "JBD / Jiabaida",
+      "model": "JBD BMS",
+      "name": "Pack"
+    },
+    "device_class": "power",
+    "name": "Pack Power",
+    "state_class": "measurement",
+    "state_topic": "mqttpi/node1/bms/power/state",
+    "unique_id": "pack1_power",
+    "unit_of_measurement": "W"
+  },
+  "homeassistant/sensor/pack1_protection_flags/config": {
+    "availability": [
+      {
+        "topic": "mqttpi/node1/status"
+      },
+      {
+        "topic": "mqttpi/node1/bms/status"
+      }
+    ],
+    "availability_mode": "all",
+    "device": {
+      "connections": [
+        [
+          "serial",
+          "uart"
+        ]
+      ],
+      "identifiers": [
+        "pack1"
+      ],
+      "manufacturer": "JBD / Jiabaida",
+      "model": "JBD BMS",
+      "name": "Pack"
+    },
+    "icon": "mdi:alert-circle-outline",
+    "name": "Pack Protection Flags",
+    "state_topic": "mqttpi/node1/bms/protection_flags/state",
+    "unique_id": "pack1_protection_flags"
+  },
+  "homeassistant/sensor/pack1_soc/config": {
+    "availability": [
+      {
+        "topic": "mqttpi/node1/status"
+      },
+      {
+        "topic": "mqttpi/node1/bms/status"
+      }
+    ],
+    "availability_mode": "all",
+    "device": {
+      "connections": [
+        [
+          "serial",
+          "uart"
+        ]
+      ],
+      "identifiers": [
+        "pack1"
+      ],
+      "manufacturer": "JBD / Jiabaida",
+      "model": "JBD BMS",
+      "name": "Pack"
+    },
+    "device_class": "battery",
+    "icon": "mdi:battery-charging",
+    "name": "Pack State of Charge",
+    "state_class": "measurement",
+    "state_topic": "mqttpi/node1/bms/soc/state",
+    "unique_id": "pack1_soc",
+    "unit_of_measurement": "%"
+  },
+  "homeassistant/sensor/pack1_temperature_1/config": {
+    "availability": [
+      {
+        "topic": "mqttpi/node1/status"
+      },
+      {
+        "topic": "mqttpi/node1/bms/status"
+      }
+    ],
+    "availability_mode": "all",
+    "device": {
+      "connections": [
+        [
+          "serial",
+          "uart"
+        ]
+      ],
+      "identifiers": [
+        "pack1"
+      ],
+      "manufacturer": "JBD / Jiabaida",
+      "model": "JBD BMS",
+      "name": "Pack"
+    },
+    "device_class": "temperature",
+    "name": "Pack Temperature 1",
+    "state_class": "measurement",
+    "state_topic": "mqttpi/node1/bms/temperature_1/state",
+    "unique_id": "pack1_temperature_1",
+    "unit_of_measurement": "\u00b0C"
+  },
+  "homeassistant/sensor/pack1_temperature_2/config": {
+    "availability": [
+      {
+        "topic": "mqttpi/node1/status"
+      },
+      {
+        "topic": "mqttpi/node1/bms/status"
+      }
+    ],
+    "availability_mode": "all",
+    "device": {
+      "connections": [
+        [
+          "serial",
+          "uart"
+        ]
+      ],
+      "identifiers": [
+        "pack1"
+      ],
+      "manufacturer": "JBD / Jiabaida",
+      "model": "JBD BMS",
+      "name": "Pack"
+    },
+    "device_class": "temperature",
+    "name": "Pack Temperature 2",
+    "state_class": "measurement",
+    "state_topic": "mqttpi/node1/bms/temperature_2/state",
+    "unique_id": "pack1_temperature_2",
+    "unit_of_measurement": "\u00b0C"
+  },
+  "homeassistant/sensor/pack1_temperature_3/config": {
+    "availability": [
+      {
+        "topic": "mqttpi/node1/status"
+      },
+      {
+        "topic": "mqttpi/node1/bms/status"
+      }
+    ],
+    "availability_mode": "all",
+    "device": {
+      "connections": [
+        [
+          "serial",
+          "uart"
+        ]
+      ],
+      "identifiers": [
+        "pack1"
+      ],
+      "manufacturer": "JBD / Jiabaida",
+      "model": "JBD BMS",
+      "name": "Pack"
+    },
+    "device_class": "temperature",
+    "name": "Pack Temperature 3",
+    "state_class": "measurement",
+    "state_topic": "mqttpi/node1/bms/temperature_3/state",
+    "unique_id": "pack1_temperature_3",
+    "unit_of_measurement": "\u00b0C"
+  },
+  "homeassistant/sensor/pack1_total_voltage/config": {
+    "availability": [
+      {
+        "topic": "mqttpi/node1/status"
+      },
+      {
+        "topic": "mqttpi/node1/bms/status"
+      }
+    ],
+    "availability_mode": "all",
+    "device": {
+      "connections": [
+        [
+          "serial",
+          "uart"
+        ]
+      ],
+      "identifiers": [
+        "pack1"
+      ],
+      "manufacturer": "JBD / Jiabaida",
+      "model": "JBD BMS",
+      "name": "Pack"
+    },
+    "device_class": "voltage",
+    "icon": "mdi:battery",
+    "name": "Pack Total Voltage",
+    "state_class": "measurement",
+    "state_topic": "mqttpi/node1/bms/total_voltage/state",
+    "unique_id": "pack1_total_voltage",
+    "unit_of_measurement": "V"
+  }
+}
