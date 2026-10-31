@@ -33,6 +33,7 @@ Runtime merges `secrets.yaml` onto `config.yaml`. Home Assistant MQTT **discover
 | `relay-bank-32.yaml` | [relay-bank-32.md](relay-bank-32.md) | 32 relays via 2× MCP23017 I2C (16 GPIO/chip) |
 | `robot.yaml` | [robot.md](robot.md) | Differential-drive rover |
 | `linear-actuator.yaml` | [linear-actuator.md](linear-actuator.md) | Reversible actuator: 2 relays + end stops, software interlock |
+| `pizero-relays.yaml` | [pizero-relays.md](pizero-relays.md) | Pi Zero W / Zero 2 W: 4 relays + 2 contact inputs |
 
 ## Protocol & sensor examples
 

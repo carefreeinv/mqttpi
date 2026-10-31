@@ -108,6 +108,16 @@ Enable the **MQTT** integration with **discovery** enabled. Entities appear afte
 {base_topic}/status                ← online / offline (retained; broker Last Will on crash)
 ```
 
+### Supported boards
+
+| `device.board` | Board | GPIO | Hardware PWM | ADC |
+|----------------|-------|------|--------------|-----|
+| `pi3`, `pi4`, `pi5` | Raspberry Pi 3 / 4 / 5 | BCM 0–27 | 12, 13, 18, 19 | — |
+| `pizero` | Raspberry Pi Zero W / Zero 2 W | BCM 0–27 | 12, 13, 18, 19 | — |
+| `picow` | Raspberry Pi Pico W | GP0–22, 26–28 | all | GP26–28 |
+
+`pins[]` is validated against the board at startup ([board notes](daemon.md#board-notes)). Pi Zero example: [`examples/pizero-relays.md`](examples/pizero-relays.md).
+
 ### Pico W pin budget
 
 | Profile | Free GPIO (typical) |
@@ -128,6 +138,7 @@ Enable the **MQTT** integration with **discovery** enabled. Entities appear afte
 | 8-zone speakers | [`examples/speaker-zones-8.md`](examples/speaker-zones-8.md) |
 | Robot rover | [`examples/robot.md`](examples/robot.md) |
 | JBD BMS | [`examples/jbd-bms.md`](examples/jbd-bms.md) |
+| Pi Zero W relay node | [`examples/pizero-relays.md`](examples/pizero-relays.md) |
 
 Each `*.yaml` has a matching `*.md` with wiring, FAQ, and design decisions.
 

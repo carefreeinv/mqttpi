@@ -1,0 +1,55 @@
+# Raspberry Pi Zero W / Zero 2 W — 4 relay outputs + 2 contact inputs.
+# Small, low-power unattended node; Raspberry Pi OS Lite recommended.
+#
+#   cp examples/pizero-relays.yaml config.yaml
+#   cp secrets.example.yaml secrets.yaml      # broker credentials
+#   python3 -m mqttpi -c config.yaml -v
+#
+# Pins are BCM numbers (same 40-pin header as other Pi models).
+# Avoid GPIO 0/1 (HAT ID EEPROM), 2/3 when I2C is on, 14/15 when the UART is used.
+
+device:
+  id: pizero-01
+  board: pizero          # also accepted: pizero2w, pizero_w, zero2w
+  ha:
+    name: "Pi Zero Relay Node"
+
+mqtt:
+  host: 192.168.1.50
+  port: 1883
+  base_topic: mqttpi/pizero-01
+  client_id: mqttpi-pizero-01
+  keepalive: 30          # Wi-Fi node: detect drop-outs a bit faster
+  homeassistant:
+    discovery: true
+    discovery_prefix: homeassistant
+  payload_on: "ON"
+  payload_off: "OFF"
+  retain: true
+  qos: 1
+
+pins:
+  - { pin: 17, alias: relay_1, direction: output, ha: { name: "Relay 1" } }
+  - { pin: 27, alias: relay_2, direction: output, ha: { name: "Relay 2" } }
+  - { pin: 22, alias: relay_3, direction: output, ha: { name: "Relay 3" } }
+  - { pin: 23, alias: relay_4, direction: output, ha: { name: "Relay 4" } }
+  # invert: true on each relay for active-low (most opto-isolated) relay boards
+
+  - pin: 24
+    alias: contact_1
+    direction: input
+    pull: up
+    invert: true           # switch to GND = ON
+    debounce_ms: 50
+    ha: { name: "Contact 1", device_class: door }
+  - pin: 25
+    alias: contact_2
+    direction: input
+    pull: up
+    invert: true
+    debounce_ms: 50
+    ha: { name: "Contact 2", device_class: door }
+
+buses:
+  i2c: { enabled: false, controller: 1, sda: 2, scl: 3 }
+  onewire: { enabled: false, pin: 4 }

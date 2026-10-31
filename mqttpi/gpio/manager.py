@@ -8,6 +8,7 @@ import time
 from types import MappingProxyType
 from typing import Any, Dict, List, Optional
 
+from mqttpi.boards import validate_pins
 from mqttpi.gpio.backend import GpioBackend, create_backend
 from mqttpi.gpio.commands import CommandFilter, CommandRequest, run_filters
 from mqttpi.gpio.ha_mqtt import GpioMqttPublisher
@@ -30,6 +31,9 @@ class GpioManager:
         self.pins = parse_pins(cfg)
         if not self.pins:
             raise ValueError("No supported GPIO pins in config")
+        # Pins must exist on device.board and not collide with enabled buses
+        # (no-op for unknown or missing boards).
+        validate_pins(cfg)
 
         mqtt_cfg = cfg.get("mqtt", {})
         device_cfg = cfg.get("device", {})
