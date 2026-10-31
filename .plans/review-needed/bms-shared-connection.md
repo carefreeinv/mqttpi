@@ -8,11 +8,11 @@
 - **Depends on:** mqtt-resilient-connect
 
 ## Progress
-- [ ] Step 1: Let `BmsMqttPublisher` publish through an injected `MqttConnection`
-- [ ] Step 2: Daemon passes its connection to the BMS subsystem
-- [ ] Step 3: Keep the standalone bridge working
-- [ ] Step 4: Tests and docs
-- [ ] Done when holds
+- [x] Step 1: Let `BmsMqttPublisher` publish through an injected `MqttConnection`
+- [x] Step 2: Daemon passes its connection to the BMS subsystem
+- [x] Step 3: Keep the standalone bridge working
+- [x] Step 4: Tests and docs
+- [x] Done when holds
 
 ## Goal
 When the unified daemon runs GPIO and BMS together it uses one MQTT connection (one client id, one will, one availability topic) instead of two, and the standalone `mqttpi-bms` bridge keeps working.
@@ -57,3 +57,14 @@ Python per `.anchor/conventions.md`: small composable classes, Protocols or narr
 - `pytest -q` passes, including discovery snapshot tests
 - Daemon mode opens exactly one MQTT connection
 - Standalone bridge still publishes BMS data
+
+## Handoff
+- Branch `feature/bms-shared-connection`, stacked on `feature/packaging-and-release-tags`.
+- Done:
+  - `BmsMqttPublisher` publishes through an injected `MqttPublisher` Protocol (`publish`, `add_connect_callback`), implemented by `MqttConnection`. No paho import in `mqttpi/bms/` any more.
+  - Shared mode (daemon): `Daemon` passes its connection into `BmsSubsystem`; exactly one paho client is created. BMS link health goes to `{base}/bms/status`, and BMS discovery uses `availability` [node status, BMS status] with `availability_mode: all`. This fixes a bug where a failing BMS poll published `offline` on the node status topic and took GPIO entities down with it.
+  - Standalone mode (`mqttpi-bms`): builds its own `MqttConnection` (Last Will, background reconnect, TLS). Availability stays on `{base}/status`. Client id is `bms.client_id` or `{mqtt.client_id}-bms` (documented behavior change).
+  - `mqttpi.mqtt.factory` (`build_mqtt`, `base_topic_from`, `default_client_id`), re-exported from `mqttpi.daemon`.
+  - `MqttConnection.disconnect()` calls paho `disconnect()` before `loop_stop()`, so queued messages (the final `offline`, `--once` data) are flushed.
+- Verified: 95 passed. This includes a discovery snapshot test (both modes produce identical payloads apart from the availability keys, so unique ids and topics are unchanged), a one-client test, and an integration test: daemon + BMS on a missing serial port → `bms/status` offline, node status stays online, SIGTERM → node offline.
+- Needs hardware: a real JBD BMS on UART, in both daemon and standalone mode.

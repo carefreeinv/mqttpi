@@ -82,6 +82,7 @@ Default `base_topic`: `mqttpi/house-bms` (override in `config.yaml`).
 | Topic | Payload | Notes |
 |-------|---------|-------|
 | `{base_topic}/status` | `online` / `offline` | Retained |
+| `{base_topic}/bms/status` | `online` / `offline` | Retained; BMS link health when running in the unified daemon ([daemon.md](../daemon.md#bms-and-the-mqtt-connection)) |
 | `{base_topic}/bms/state` | JSON summary | SOC, voltage, current, cells, temps, flags |
 
 ### Per-sensor state topics

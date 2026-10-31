@@ -8,15 +8,18 @@ import time
 from typing import Any, Dict, Optional
 
 from mqttpi.bms.bridge import build_publisher, poll_once
+from mqttpi.mqtt.client import MqttConnection
 
 log = logging.getLogger(__name__)
 
 
 class BmsSubsystem:
-    def __init__(self, cfg: Dict[str, Any]) -> None:
+    def __init__(self, cfg: Dict[str, Any], connection: Optional[MqttConnection] = None) -> None:
+        """With ``connection`` (the daemon's), BMS shares it: no second client.
+        Without, it opens its own (legacy / library use)."""
         self.cfg = cfg
         self._bms_cfg = cfg.get("bms", {})
-        self._publisher = build_publisher(cfg)
+        self._publisher = build_publisher(cfg, connection=connection)
         self._stop = threading.Event()
         self._thread: Optional[threading.Thread] = None
 

@@ -9,11 +9,13 @@ import signal
 import sys
 import time
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 from mqttpi.bms.ha_mqtt import BmsMqttPublisher
 from mqttpi.bms.jbd_uart import JbdUartClient
-from mqttpi.config import load_config, mqtt_port, parse_tls
+from mqttpi.config import load_config
+from mqttpi.mqtt.client import MqttConnection
+from mqttpi.mqtt.factory import base_topic_from, build_mqtt, default_client_id
 
 log = logging.getLogger("mqttpi.bms")
 
@@ -23,31 +25,52 @@ def device_id_from_port(port: str) -> str:
     return f"jbd_{slug}"
 
 
-def build_publisher(cfg: Dict[str, Any]) -> BmsMqttPublisher:
+def build_publisher(cfg: Dict[str, Any], connection: Optional[MqttConnection] = None) -> BmsMqttPublisher:
+    """BMS publisher from config.
+
+    With ``connection`` (the unified daemon) the publisher shares it. Without,
+    it builds its own connection (Last Will, background reconnect, TLS) with a
+    client id that does not collide with the daemon's: ``bms.client_id`` or
+    ``{mqtt.client_id}-bms``.
+    """
     mqtt_cfg = cfg.get("mqtt", {})
     bms_cfg = cfg.get("bms", {})
     device_cfg = cfg.get("device", {})
     ha_cfg = bms_cfg.get("ha", {})
 
     port = bms_cfg.get("port", "/dev/serial0")
-    device_id = device_cfg.get("id", "bms-node")
     ha_name = ha_cfg.get("name") or device_cfg.get("ha", {}).get("name") or "LiFePO4 Battery"
-
-    tls = parse_tls(mqtt_cfg.get("tls"))
-    return BmsMqttPublisher(
-        host=mqtt_cfg.get("host", "localhost"),
-        port=mqtt_port(mqtt_cfg, tls),
-        tls=tls,
-        username=mqtt_cfg.get("username", ""),
-        password=mqtt_cfg.get("password", ""),
-        base_topic=mqtt_cfg.get("base_topic", f"mqttpi/{device_id}"),
-        client_id=mqtt_cfg.get("client_id", f"mqttpi-{device_id}"),
+    common: Dict[str, Any] = dict(
         device_name=ha_name,
         device_id=ha_cfg.get("device_id") or device_id_from_port(port),
         discovery_prefix=mqtt_cfg.get("homeassistant", {}).get(
             "discovery_prefix", "homeassistant"
         ),
         retain=bool(mqtt_cfg.get("retain", True)),
+    )
+
+    if connection is not None:
+        return BmsMqttPublisher(
+            base_topic=connection.base_topic or base_topic_from(cfg),
+            connection=connection,
+            **common,
+        )
+
+    device_id = device_cfg.get("id", "bms-node")
+    client_id = str(bms_cfg.get("client_id") or f"{default_client_id(cfg)}-bms")
+    conn = build_mqtt(
+        {**cfg, "mqtt": {"base_topic": f"mqttpi/{device_id}", **mqtt_cfg}},
+        client_id=client_id,
+    )
+    return BmsMqttPublisher(
+        host=conn.host,
+        port=conn.port,
+        tls=conn.tls,
+        base_topic=conn.base_topic or f"mqttpi/{device_id}",
+        client_id=client_id,
+        connection=conn,
+        owns_connection=True,
+        **common,
     )
 
 
