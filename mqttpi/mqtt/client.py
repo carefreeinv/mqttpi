@@ -193,8 +193,11 @@ class MqttConnection:
         if self.is_connected:
             self._client.subscribe(topic, qos=self.qos)
 
-    def publish(self, topic: str, payload: str) -> None:
-        self._client.publish(topic, payload, retain=self.retain, qos=self.qos)
+    def publish(self, topic: str, payload: str, retain: Optional[bool] = None) -> None:
+        """Publish with the connection's QoS; ``retain`` defaults to ``mqtt.retain``."""
+        self._client.publish(
+            topic, payload, retain=self.retain if retain is None else retain, qos=self.qos
+        )
 
     def publish_json(self, topic: str, payload: Dict[str, Any]) -> None:
         self.publish(topic, json.dumps(payload))

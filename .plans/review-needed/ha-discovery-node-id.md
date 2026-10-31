@@ -8,10 +8,10 @@
 - **Depends on:** mqtt-availability-lwt
 
 ## Progress
-- [ ] Step 1: Add an opt-in discovery topic layout
-- [ ] Step 2: Apply it to GPIO and BMS publishers
-- [ ] Step 3: Migration notes and ACL example
-- [ ] Done when holds
+- [x] Step 1: Add an opt-in discovery topic layout
+- [x] Step 2: Apply it to GPIO and BMS publishers
+- [x] Step 3: Migration notes and ACL example
+- [x] Done when holds
 
 ## Goal
 Operators can make each device publish its discovery configs under `homeassistant/<component>/<device_id>/<object_id>/config` (the node-id form Home Assistant supports), so a broker ACL can restrict each device to `homeassistant/+/<device_id>/#` and its own `base_topic`. The default stays the current `homeassistant/<component>/<device_id>_<alias>/config`.
@@ -56,3 +56,15 @@ Python per `.anchor/conventions.md`: small composable classes, Protocols or narr
 - `pytest -q` passes for both layouts
 - Default layout unchanged (regression test)
 - ACL example documented
+
+## Handoff
+- Branch `feature/ha-discovery-node-id`, stacked on `feature/bms-shared-connection`. It only needs `mqtt-availability-lwt`; it is stacked because the BMS publisher changed in that branch.
+- Done:
+  - `mqttpi/mqtt/discovery.py`: `DiscoveryLayout` (`topic`, `stale_topics`) and `parse_discovery_layout(cfg)`.
+  - Opt-in keys: `mqtt.homeassistant.discovery_node_id` (`false` default, `true` uses a sanitized `device.id`, or an explicit `[A-Za-z0-9_-]+` id) and `discovery_clear_legacy` (default `true`).
+  - GPIO and BMS publishers use the layout. A BMS on a node keeps its device prefix in the object id (`<node>/<bms_id>_<key>`).
+  - Legacy cleanup publishes a retained empty payload to the old topic *before* the new config, so HA never sees one unique_id on two topics.
+  - `MqttConnection.publish(retain=)` override, so the cleanup is retained even with `mqtt.retain: false`.
+- Docs: daemon.md "Discovery topics and per-node ACLs" (topic table, Mosquitto `pattern` ACL, migration and ACL ordering), config.example.md/.yaml, CHANGELOG.
+- Verified: 104 passed. Tests cover both layouts, a default-layout regression test, unchanged unique ids, cleanup ordering and retain, sanitizing and validation, and BMS in both layouts.
+- Needs a real setup: HA migration on a live install (entity history kept) and a Mosquitto ACL with per-node users.

@@ -52,6 +52,7 @@ For ready-made layouts, prefer [`examples/README.md`](examples/README.md) — ea
 | `gpio.backend` | `rpi` (default) or `mock` — mock never touches hardware; with `rpi`, a missing GPIO library is a startup error |
 | `mqtt.reconnect_min_s` / `mqtt.reconnect_max_s` | `1` / `60` s — background connect/reconnect backoff; the daemon starts even when the broker is down |
 | `mqtt.max_queued_messages` | `1000` — qos>0 messages buffered while disconnected (newest dropped when full; `0` = unbounded) |
+| `mqtt.homeassistant.discovery_node_id` | `false` — discovery on `homeassistant/<component>/<device.id>_<alias>/config` (unchanged). `true` (use `device.id`) or a string node id: `homeassistant/<component>/<node_id>/<alias>/config`, for per-node broker ACLs. `discovery_clear_legacy` (default `true`) empties the old-layout configs first. See [daemon.md](daemon.md#discovery-topics-and-per-node-acls) |
 
 ---
 
