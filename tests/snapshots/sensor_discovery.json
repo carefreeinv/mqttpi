@@ -1,0 +1,59 @@
+{
+  "homeassistant/sensor/node1_enclosure_temp/config": {
+    "availability": [
+      {
+        "topic": "mqttpi/node1/status"
+      },
+      {
+        "topic": "mqttpi/node1/sensors/enclosure_temp/availability"
+      }
+    ],
+    "availability_mode": "all",
+    "device": {
+      "identifiers": [
+        "node1"
+      ],
+      "manufacturer": "mqttpi",
+      "model": "pi4",
+      "name": "Test Node"
+    },
+    "device_class": "temperature",
+    "json_attributes_topic": "mqttpi/node1/sensors/enclosure_temp/attributes",
+    "name": "Enclosure",
+    "payload_available": "online",
+    "payload_not_available": "offline",
+    "state_class": "measurement",
+    "state_topic": "mqttpi/node1/sensors/enclosure_temp/state",
+    "suggested_display_precision": 1,
+    "unique_id": "node1_enclosure_temp",
+    "unit_of_measurement": "\u00b0C"
+  },
+  "homeassistant/sensor/node1_env_humidity/config": {
+    "availability": [
+      {
+        "topic": "mqttpi/node1/status"
+      },
+      {
+        "topic": "mqttpi/node1/sensors/env_humidity/availability"
+      }
+    ],
+    "availability_mode": "all",
+    "device": {
+      "identifiers": [
+        "node1"
+      ],
+      "manufacturer": "mqttpi",
+      "model": "pi4",
+      "name": "Test Node"
+    },
+    "device_class": "humidity",
+    "json_attributes_topic": "mqttpi/node1/sensors/env_humidity/attributes",
+    "name": "Env Humidity",
+    "payload_available": "online",
+    "payload_not_available": "offline",
+    "state_class": "measurement",
+    "state_topic": "mqttpi/node1/sensors/env_humidity/state",
+    "unique_id": "node1_env_humidity",
+    "unit_of_measurement": "%"
+  }
+}

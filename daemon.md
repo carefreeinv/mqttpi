@@ -45,10 +45,48 @@ flowchart TD
     gpio -->|no| bms
     gpio_run --> bms{bms.enabled?}
     bms -->|yes| bms_run["BMS subsystem<br/>Poll JBD UART<br/>Publish sensor state + discovery"]
-    bms -->|no| loop([Run until exit])
-    bms_run --> loop
+    bms -->|no| sensors{sensors with a driver?}
+    bms_run --> sensors
+    sensors -->|yes| sensors_run["Sensor subsystem<br/>Poll drivers on a schedule<br/>Publish sensor state + discovery"]
+    sensors -->|no| loop([Run until exit])
+    sensors_run --> loop
     loop --> status["Publish status online/offline"]
 ```
+
+## Sensors (numeric readings)
+
+A `sensors` section turns readings from drivers (1-Wire, I2C, ADC, CAN-derived values, …) into Home Assistant `sensor` entities on the same HA device as the GPIO entities. The subsystem starts when at least one enabled sensor has a driver. A sensor whose `type` has no driver yet is skipped with a warning, so configs written for future drivers (`mpu6050`, `vl53l0x`, … in `examples/`) still load.
+
+Built-in driver today: `cpu_temperature` (SoC temperature from `/sys/class/thermal/thermal_zone0/temp`; `path:` overrides it). Hardware drivers plug in through `mqttpi.sensors.register_driver`.
+
+```yaml
+sensors:
+  cpu:
+    type: cpu_temperature          # aliases: chip, driver
+    publish: { interval_ms: 30000, retain: true }
+    # timeout_s: 10                # default: min(interval, 10 s)
+    # stale_after_s: 90            # default: 3 × interval, at least 10 s
+    # readings:                    # optional; the driver supplies defaults
+    #   temperature:
+    #     alias: cpu_temperature   # default: <sensor>_<key>
+    #     precision: 1
+    #     ha: { name: "CPU Temperature", device_class: temperature,
+    #           state_class: measurement, unit_of_measurement: "°C" }
+```
+
+The list form (`sensors: [{name: cpu, type: cpu_temperature}]`) is accepted too. Extra keys under `ha:` (for example `expire_after`) are passed through to discovery.
+
+| Topic (under `{base_topic}`) | Payload |
+|------------------------------|---------|
+| `sensors/<alias>/state` | The number, e.g. `48.3` (rounded to `precision` when set) |
+| `sensors/<alias>/attributes` | JSON `{"timestamp": "2026-01-01T12:00:00+00:00", "quality": "good"}` (`good` or `uncertain`) |
+| `sensors/<alias>/availability` | `online` / `offline`, retained |
+
+Discovery: `homeassistant/sensor/<device.id>_<alias>/config` (or the node-id layout), with `unit_of_measurement`, `device_class`, `state_class`, `suggested_display_precision`, `json_attributes_topic`, and `availability` = [node status, entity availability] with `availability_mode: all`.
+
+**Polling:** one scheduler thread polls every sensor at its own interval. Reads run in worker threads, so a slow driver only delays itself. A read still running after `timeout_s` counts as a failure, its late result is discarded, and that sensor is not polled again until the read returns. A failed read (exception, timeout, `bad` quality, or no numeric value) publishes nothing. When a sensor has had no good reading for `stale_after_s`, its entities go `offline`. The next good reading brings them back `online`. Entities start `offline` until their first good reading.
+
+**Writing a driver:** implement `read() -> mqttpi.sensors.Reading` (values keyed by reading name, plus optional `quality`) and register a factory: `register_driver("mychip", lambda spec: MyChip(spec["address"]))`. Optional `default_readings` supplies units and classes, and optional `close()` runs on shutdown. Tests can use a fake driver in the same way; see `tests/test_sensors.py`.
 
 ## GPIO inputs and debounce
 
