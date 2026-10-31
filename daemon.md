@@ -50,6 +50,10 @@ flowchart TD
     loop --> status["Publish status online/offline"]
 ```
 
+## GPIO inputs and debounce
+
+Inputs are polled every 20 ms. A new reading is published once it has been stable for the pin's `debounce_ms` (default 50 ms). Contact bounce or a glitch shorter than that is ignored, and each bounce restarts the timer. Expect state changes in Home Assistant about `debounce_ms` after the physical edge. For limit switches and fast safety inputs, keep `debounce_ms` small (10–30 ms).
+
 ## GPIO backend
 
 On a Pi the daemon drives pins through `RPi.GPIO` (installed from `requirements.txt` on ARM Linux only). If the library is missing or cannot initialise, the daemon **exits with code 1** and an error naming the fix — it no longer silently falls back to a mock backend that only pretends to switch outputs.

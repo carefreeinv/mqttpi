@@ -32,12 +32,10 @@ def test_checksum() -> None:
     assert chksum(bytes([0x03, 0x00])) == 0xFFFD
 
 
-@pytest.mark.xfail(strict=True, reason=(
-    "Known bug: build_read_frame includes the 0xA5 read byte in the checksum; "
-    "the protocol sums only command + length + data (doc frame DD A5 03 00 FF FD 77)"))
 def test_read_frames_match_protocol_document() -> None:
     assert build_read_frame(CMD_HWINFO) == DOC_FRAMES["request_hwinfo"]
     assert build_read_frame(CMD_CELLINFO) == DOC_FRAMES["request_cellinfo"]
+    assert build_read_frame(0x05) == bytes.fromhex("DDA50500FFFB77")  # hardware version
 
 
 def test_parse_protocol_document_response() -> None:
@@ -103,14 +101,13 @@ def test_parse_hwinfo_protection_flags_and_mosfets() -> None:
     assert not d.charging and not d.discharging
 
 
-@pytest.mark.xfail(strict=True, reason=(
-    "Known bug: balancing bits are mapped in reverse; per the protocol, bit n of the "
-    "low balance word (offset 12) is cell n+1 and the high word (offset 14) is cells 17-32"))
 def test_parse_hwinfo_balancing_cells_follow_protocol() -> None:
     d = parse_hwinfo(hwinfo_payload(balance=0b0001 << 16, cells=4))  # low word bit 0
     assert d.balancing and d.balancing_cells == "1"
     d = parse_hwinfo(hwinfo_payload(balance=0b0110 << 16, cells=4))
     assert d.balancing_cells == "2, 3"
+    d = parse_hwinfo(hwinfo_payload(balance=0b1, cells=20))  # high word bit 0
+    assert d.balancing_cells == "17"
 
 
 def test_parse_hwinfo_caps_temperature_sensors_at_six() -> None:

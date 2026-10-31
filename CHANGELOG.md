@@ -58,6 +58,12 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - [`mkdocs.yml`](mkdocs.yml) — use custom logo instead of Material `chip` icon
 - [`workshop.md`](examples/sites/workshop.md) — cross-link to makerspace woodshop variant
 
+### Fixed
+
+- **GPIO input debounce** — an input change that settled inside the debounce window (a press or bounce shorter than `debounce_ms` ending in the other state) was never published, leaving the reported state stuck. Inputs now publish a value once it has been stable for `debounce_ms` (default 50 ms); bounces restart the timer. Note: state changes are now reported after `debounce_ms` rather than on the first edge ([daemon.md](daemon.md#gpio-inputs-and-debounce))
+- **JBD read requests** — the request checksum wrongly included the `0xA5` read byte (`DD A5 03 00 FF 58 77`); requests now match the protocol (`DD A5 03 00 FF FD 77`). BMS firmware that validates request checksums did not answer before
+- **JBD balancing cells** — balance bits were decoded in reverse order; bit n of the low balance word is now cell n+1 and the high word covers cells 17–32 (`balancing_cells` sensor)
+
 ### Planned
 
 - PWM, CAN, I2C expanders, Victron, **RFID reader driver** in unified daemon

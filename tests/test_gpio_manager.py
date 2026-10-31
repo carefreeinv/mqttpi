@@ -123,9 +123,6 @@ def test_input_debounce_suppresses_chatter(started) -> None:
     assert [p.payload for p in client.published_to("mqttpi/n/gpio/b/state")] == ["OFF", "ON"]
 
 
-@pytest.mark.xfail(strict=True, reason=(
-    "Known bug: a change that settles inside the debounce window is never published, "
-    "because every poll that sees it restarts the window"))
 def test_input_change_settling_inside_debounce_window_is_published(started) -> None:
     mgr, client = started([{"pin": 27, "alias": "b", "direction": "input", "pull": "down",
                             "debounce_ms": 100}])
@@ -153,3 +150,14 @@ def test_stop_cleans_up_backend(started) -> None:
     mgr, _client = started([{"pin": 17, "alias": "r1", "initial": True}])
     mgr.stop()
     assert mgr.backend.read(17) is False
+
+
+def test_glitch_shorter_than_debounce_is_ignored(started) -> None:
+    mgr, client = started([{"pin": 27, "alias": "b", "direction": "input", "pull": "down",
+                            "debounce_ms": 200}])
+    mgr.backend.write(27, True)
+    time.sleep(0.06)
+    mgr.backend.write(27, False)
+    time.sleep(0.3)
+    assert [p.payload for p in client.published_to("mqttpi/n/gpio/b/state")] == ["OFF"]
+
