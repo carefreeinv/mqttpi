@@ -8,12 +8,12 @@
 - **Depends on:** none
 
 ## Progress
-- [ ] Step 1: Add `pyproject.toml` with console scripts
-- [ ] Step 2: Single-source the version
+- [x] Step 1: Add `pyproject.toml` with console scripts
+- [x] Step 2: Single-source the version
 - [ ] Step 3: Confirm which commits the existing changelog versions correspond to
 - [ ] Step 4: Create and push the missing tags (human)
-- [ ] Step 5: Install docs and release checklist
-- [ ] Done when holds
+- [x] Step 5: Install docs and release checklist
+- [x] Done when holds
 
 ## Goal
 mqttpi can be installed and pinned like any Python package (`pip install mqttpi @ git+https://github.com/carefreeinv/mqttpi@v0.3.0`), and every version in `CHANGELOG.md` has a matching git tag, so the compare links work and downstream projects can depend on a version instead of a commit.
@@ -60,3 +60,24 @@ Python per `.anchor/conventions.md`: small composable classes, Protocols or narr
 - Wheel builds and installs in a clean venv; both console scripts run
 - All changelog versions have tags on origin and compare links resolve
 - Install docs updated; docs build passes
+
+## Handoff
+- Branch `feature/packaging-and-release-tags`, stacked on `feature/mqtt-tls`.
+- Done:
+  - `pyproject.toml` (setuptools).
+    - Package discovery for `mqttpi*`.
+    - Console scripts `mqttpi` → `mqttpi.daemon:main` and `mqttpi-bms` → `mqttpi.bms.bridge:main`.
+    - `requires-python >= 3.9`, verified: the wheel was built and installed in a clean 3.9.25 venv, `mqttpi --help` and `mqttpi-bms --help` work, `pip show` reports 0.2.0, and the unit tests pass on 3.9.
+    - Version is dynamic from `mqttpi.__version__`.
+    - Extras: `dev` (pytest, amqtt on 3.10+) and `docs`.
+  - `pytest.ini` moved into `[tool.pytest.ini_options]`.
+  - README: package install, pinning, test/wheel commands, and a release checklist.
+  - A test asserts that the pyproject dependencies match `requirements.txt`.
+- **Step 3 (owner approval) is pending.** Verified candidate list: the version string in `CHANGELOG.md`, and in `__version__` where it was bumped, at each commit.
+  - `v0.1.0` = `5feef11` "Initial public release v0.1.0" (changelog `[0.1.0]`, `__version__` 0.1.0)
+  - `v0.1.1` = `042d779` "Release v0.1.1: relay-bank-16 and MCP23017 fix" (changelog `[0.1.1]`; `__version__` was not bumped and still reads 0.1.0)
+  - `v0.1.2` = `e88174d` "Release v0.1.2 changelog" (changelog `[0.1.2]`; `__version__` 0.1.0)
+  - `v0.1.3` = `5aef1e9` "Release v0.1.3: public docs polish and portable install paths" (changelog `[0.1.3]`; `__version__` 0.1.0)
+  - `v0.2.0` = `8998f0b` "Add unified mqttpi daemon (GPIO + BMS) v0.2.0" (changelog `[0.2.0]`, `__version__` 0.2.0)
+- **Step 4 (create and push tags) is a human step.** Not done; agents must not create tags. Commands for the owner, after approval:
+  `for t in "v0.1.0 5feef11" "v0.1.1 042d779" "v0.1.2 e88174d" "v0.1.3 5aef1e9" "v0.2.0 8998f0b"; do set -- $t; git tag -a $1 $2 -m "mqttpi ${1#v}"; done && git push origin --tags`
