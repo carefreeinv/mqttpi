@@ -14,6 +14,13 @@ log = logging.getLogger(__name__)
 PAYLOAD_AVAILABLE = "online"
 PAYLOAD_NOT_AVAILABLE = "offline"
 
+DEFAULT_RECONNECT_MIN_S = 1
+DEFAULT_RECONNECT_MAX_S = 60
+DEFAULT_MAX_QUEUED_MESSAGES = 1000
+# After this many consecutive failed attempts, log one more warning so a
+# misconfigured broker target is visible without spamming the log.
+WARN_AFTER_FAILED_ATTEMPTS = 10
+
 ConnectCallback = Callable[[], None]
 
 
@@ -31,6 +38,15 @@ class MqttConnection:
     ``payload_available`` after *every* successful (re)connect. If the process
     dies without a clean disconnect, the broker publishes the will so consumers
     see the node go offline. Pass ``will=False`` to opt out.
+
+    ``connect()`` never blocks and never raises because the broker is
+    unreachable: paho retries in the background with exponential backoff
+    between ``reconnect_min_s`` and ``reconnect_max_s``. Subscriptions made
+    with :meth:`subscribe` are remembered and re-issued after every reconnect.
+    While disconnected, qos>0 publishes are queued up to
+    ``max_queued_messages`` (newest messages are dropped once the queue is
+    full; qos 0 publishes are dropped). Use :meth:`wait_connected` if you
+    need to block until the first connection.
     """
 
     def __init__(
@@ -48,7 +64,18 @@ class MqttConnection:
         payload_available: str = PAYLOAD_AVAILABLE,
         payload_not_available: str = PAYLOAD_NOT_AVAILABLE,
         keepalive: int = 60,
+        reconnect_min_s: int = DEFAULT_RECONNECT_MIN_S,
+        reconnect_max_s: int = DEFAULT_RECONNECT_MAX_S,
+        max_queued_messages: int = DEFAULT_MAX_QUEUED_MESSAGES,
     ) -> None:
+        _validate_target(host, port)
+        if reconnect_min_s < 1 or reconnect_max_s < reconnect_min_s:
+            raise ValueError(
+                "mqtt.reconnect_min_s must be >= 1 and <= mqtt.reconnect_max_s "
+                f"(got {reconnect_min_s}, {reconnect_max_s})"
+            )
+        if max_queued_messages < 0:
+            raise ValueError("mqtt.max_queued_messages must be >= 0 (0 = unbounded)")
         self.host = host
         self.port = port
         self.username = username
@@ -63,6 +90,9 @@ class MqttConnection:
         self.will_enabled = bool(will and availability_topic)
         self.payload_available = payload_available
         self.payload_not_available = payload_not_available
+        self.reconnect_min_s = int(reconnect_min_s)
+        self.reconnect_max_s = int(reconnect_max_s)
+        self.max_queued_messages = int(max_queued_messages)
 
         self._client = mqtt.Client(
             mqtt.CallbackAPIVersion.VERSION2,
@@ -73,9 +103,14 @@ class MqttConnection:
         self._message_handler: Optional[Callable[[str, str], None]] = None
         self._connect_callbacks: List[ConnectCallback] = []
         self._connected = threading.Event()
+        self._subscriptions: List[str] = []
+        self._lock = threading.Lock()
+        self._failed_attempts = 0
+        self._outage_logged = False
         self._client.on_message = self._on_message
         self._client.on_connect = self._on_connect
         self._client.on_disconnect = self._on_disconnect
+        self._client.on_connect_fail = self._on_connect_fail
 
     # -- configuration -------------------------------------------------
 
@@ -96,6 +131,10 @@ class MqttConnection:
     def is_connected(self) -> bool:
         return self._connected.is_set()
 
+    def wait_connected(self, timeout: Optional[float] = None) -> bool:
+        """Block until connected (or ``timeout`` seconds). Returns ``is_connected``."""
+        return self._connected.wait(timeout)
+
     # -- lifecycle -----------------------------------------------------
 
     def connect(self) -> None:
@@ -107,9 +146,19 @@ class MqttConnection:
                 qos=self.qos,
                 retain=True,
             )
-        self._client.connect(self.host, self.port, keepalive=self.keepalive)
+        self._client.reconnect_delay_set(self.reconnect_min_s, self.reconnect_max_s)
+        self._client.max_queued_messages_set(self.max_queued_messages)
+        # Non-blocking: DNS lookup and TCP connect happen on the network
+        # thread, which keeps retrying with backoff until the broker answers.
+        self._client.connect_async(self.host, self.port, keepalive=self.keepalive)
         self._client.loop_start()
-        log.info("MQTT connecting to %s:%s", self.host, self.port)
+        log.info(
+            "MQTT connecting to %s:%s in background (retry %s-%ss)",
+            self.host,
+            self.port,
+            self.reconnect_min_s,
+            self.reconnect_max_s,
+        )
 
     def disconnect(self) -> None:
         self._client.loop_stop()
@@ -119,7 +168,12 @@ class MqttConnection:
     # -- publish / subscribe -------------------------------------------
 
     def subscribe(self, topic: str) -> None:
-        self._client.subscribe(topic, qos=self.qos)
+        """Subscribe now if connected, and again after every reconnect."""
+        with self._lock:
+            if topic not in self._subscriptions:
+                self._subscriptions.append(topic)
+        if self.is_connected:
+            self._client.subscribe(topic, qos=self.qos)
 
     def publish(self, topic: str, payload: str) -> None:
         self._client.publish(topic, payload, retain=self.retain, qos=self.qos)
@@ -157,7 +211,21 @@ class MqttConnection:
             log.warning("MQTT connect to %s:%s refused: %s", self.host, self.port, reason_code)
             return
         self._connected.set()
-        log.info("MQTT connected to %s:%s", self.host, self.port)
+        if self._outage_logged:
+            log.info(
+                "MQTT reconnected to %s:%s after %d failed attempt(s)",
+                self.host,
+                self.port,
+                self._failed_attempts,
+            )
+        else:
+            log.info("MQTT connected to %s:%s", self.host, self.port)
+        self._failed_attempts = 0
+        self._outage_logged = False
+        with self._lock:
+            topics = list(self._subscriptions)
+        for topic in topics:
+            self._client.subscribe(topic, qos=self.qos)
         if self.availability_topic is not None:
             self.publish_availability(online=True)
         for callback in list(self._connect_callbacks):
@@ -174,8 +242,36 @@ class MqttConnection:
         reason_code: Any = None,
         _properties: object = None,
     ) -> None:
+        was_connected = self._connected.is_set()
         self._connected.clear()
-        log.info("MQTT disconnected from %s:%s (%s)", self.host, self.port, reason_code)
+        if was_connected and _is_failure(reason_code):
+            self._note_outage(f"connection lost ({reason_code})")
+        else:
+            log.info("MQTT disconnected from %s:%s (%s)", self.host, self.port, reason_code)
+
+    def _on_connect_fail(self, _client: mqtt.Client, _userdata: object) -> None:
+        self._failed_attempts += 1
+        self._note_outage("broker unreachable")
+        if self._failed_attempts == WARN_AFTER_FAILED_ATTEMPTS:
+            log.warning(
+                "MQTT still not connected to %s:%s after %d attempts — check mqtt.host / mqtt.port",
+                self.host,
+                self.port,
+                self._failed_attempts,
+            )
+
+    def _note_outage(self, reason: str) -> None:
+        """Log one warning per outage; further retries log at debug level."""
+        if self._outage_logged:
+            log.debug("MQTT %s:%s retry failed: %s", self.host, self.port, reason)
+            return
+        self._outage_logged = True
+        log.warning(
+            "MQTT %s:%s %s — retrying in background (local work continues)",
+            self.host,
+            self.port,
+            reason,
+        )
 
     def _on_message(
         self,
@@ -191,6 +287,16 @@ class MqttConnection:
             log.warning("Ignoring non-UTF-8 MQTT payload on %s", msg.topic)
             return
         self._message_handler(msg.topic, payload)
+
+
+def _validate_target(host: str, port: int) -> None:
+    """Fail fast on configuration errors (not on an unreachable broker)."""
+    if not isinstance(host, str) or not host.strip():
+        raise ValueError("mqtt.host must be a non-empty hostname or IP address")
+    if any(ch.isspace() for ch in host) or "/" in host:
+        raise ValueError(f"mqtt.host {host!r} is not a valid hostname or IP address")
+    if not 0 < int(port) < 65536:
+        raise ValueError(f"mqtt.port must be 1-65535 (got {port})")
 
 
 def _is_failure(reason_code: Any) -> bool:

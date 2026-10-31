@@ -12,7 +12,7 @@ def test_will_registered_before_connect(fake_paho) -> None:
     conn.connect()
     client = fake_paho.last
     names = client.call_names()
-    assert names.index("will_set") < names.index("connect")
+    assert names.index("will_set") < names.index("connect_async")
     assert client.will is not None
     assert client.will.topic == "mqttpi/node1/status"
     assert client.will.payload == "offline"
@@ -109,5 +109,5 @@ def test_publish_availability_legacy_signature(fake_paho) -> None:
 
 def test_keepalive_passed_to_connect(fake_paho) -> None:
     MqttConnection("broker", base_topic="b", keepalive=15).connect()
-    name, _args, kwargs = [c for c in fake_paho.last.calls if c[0] == "connect"][0]
+    name, _args, kwargs = [c for c in fake_paho.last.calls if c[0] == "connect_async"][0]
     assert kwargs["keepalive"] == 15

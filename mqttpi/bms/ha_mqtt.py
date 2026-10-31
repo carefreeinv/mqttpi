@@ -44,11 +44,29 @@ class BmsMqttPublisher:
         if username:
             self._client.username_pw_set(username, password or None)
         self._discovery_done = False
+        self._client.on_connect = self._on_connect
 
-    def connect(self) -> None:
-        self._client.connect(self.host, self.port, keepalive=60)
+    def connect(self, blocking: bool = False) -> None:
+        """Connect to the broker.
+
+        Non-blocking by default: paho retries in the background (1-60 s
+        backoff) so BMS polling keeps running while the broker is down.
+        ``blocking=True`` keeps the old fail-fast behavior for one-shot use.
+        """
+        if blocking:
+            self._client.connect(self.host, self.port, keepalive=60)
+        else:
+            self._client.reconnect_delay_set(1, 60)
+            self._client.connect_async(self.host, self.port, keepalive=60)
         self._client.loop_start()
-        log.info("MQTT connected to %s:%s", self.host, self.port)
+        log.info("MQTT connecting to %s:%s", self.host, self.port)
+
+    def _on_connect(self, _client, _userdata, _flags, reason_code, _properties=None) -> None:
+        if getattr(reason_code, "is_failure", False):
+            return
+        # Re-send discovery on the next publish after every (re)connect, so a
+        # broker restarted without persistence learns the entities again.
+        self._discovery_done = False
 
     def disconnect(self) -> None:
         self._client.loop_stop()

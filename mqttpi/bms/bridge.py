@@ -155,7 +155,7 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.once:
         mqtt_pub = build_publisher(cfg)
-        mqtt_pub.connect()
+        mqtt_pub.connect(blocking=True)
         try:
             poll_once(cfg, mqtt_pub)
         finally:

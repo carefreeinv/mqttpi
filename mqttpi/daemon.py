@@ -13,7 +13,12 @@ from mqttpi.bms.subsystem import BmsSubsystem, bms_enabled
 from mqttpi.config import load_config
 from mqttpi.gpio.manager import GpioManager
 from mqttpi.gpio.pins import parse_pins
-from mqttpi.mqtt.client import MqttConnection
+from mqttpi.mqtt.client import (
+    DEFAULT_MAX_QUEUED_MESSAGES,
+    DEFAULT_RECONNECT_MAX_S,
+    DEFAULT_RECONNECT_MIN_S,
+    MqttConnection,
+)
 
 log = logging.getLogger("mqttpi")
 
@@ -32,6 +37,11 @@ def build_mqtt(cfg: Dict[str, Any]) -> MqttConnection:
         qos=int(mqtt_cfg.get("qos", 1)),
         base_topic=base_topic_from(cfg),
         keepalive=int(mqtt_cfg.get("keepalive", 60)),
+        reconnect_min_s=int(mqtt_cfg.get("reconnect_min_s", DEFAULT_RECONNECT_MIN_S)),
+        reconnect_max_s=int(mqtt_cfg.get("reconnect_max_s", DEFAULT_RECONNECT_MAX_S)),
+        max_queued_messages=int(
+            mqtt_cfg.get("max_queued_messages", DEFAULT_MAX_QUEUED_MESSAGES)
+        ),
     )
 
 
@@ -87,8 +97,10 @@ class Daemon:
                 handler(topic, payload)
 
         self._mqtt.set_message_handler(on_message)
-        # Availability "online" is published by MqttConnection on every
-        # successful (re)connect; the Last Will covers abrupt exits.
+        # Non-blocking: subsystems start even when the broker is down.
+        # Availability "online", subscriptions, and HA discovery are
+        # (re)published on every successful connect; the Last Will covers
+        # abrupt exits.
         self._mqtt.connect()
 
         if self._gpio is not None:
@@ -157,7 +169,7 @@ def main(argv: list[str] | None = None) -> int:
 
     try:
         Daemon(cfg, mock_gpio=args.mock_gpio).run()
-    except RuntimeError as exc:
+    except (RuntimeError, ValueError) as exc:
         log.error("%s", exc)
         return 1
     except KeyboardInterrupt:

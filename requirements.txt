@@ -1,3 +1,7 @@
 pyserial>=3.5
 paho-mqtt>=2.0
 PyYAML>=6.0
+# GPIO hardware backend; only installed on ARM Linux boards (x86 CI and dev
+# machines skip it). On a Raspberry Pi 5 / newer kernels, use the drop-in
+# replacement instead: pip uninstall RPi.GPIO && pip install rpi-lgpio
+RPi.GPIO>=0.7; sys_platform == "linux" and platform_machine in "armv6l armv7l aarch64"
