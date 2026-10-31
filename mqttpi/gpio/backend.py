@@ -42,7 +42,8 @@ class MockGpioBackend(GpioBackend):
         self._values[pin] = initial
 
     def setup_input(self, pin: int, pull: Optional[str]) -> None:
-        self._values.setdefault(pin, False)
+        # Idle level follows the pull resistor, like an unconnected real pin.
+        self._values.setdefault(pin, pull == "up")
 
     def write(self, pin: int, value: bool) -> None:
         self._values[pin] = value

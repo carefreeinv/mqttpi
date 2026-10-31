@@ -13,6 +13,8 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **Resilient MQTT connect** — the daemon and `MqttConnection` start when the broker is unreachable, keep GPIO/BMS work running, and connect in the background with backoff (`mqtt.reconnect_min_s` / `mqtt.reconnect_max_s`, defaults 1 / 60 s); subscriptions, availability, HA discovery, and pin states are re-published after every reconnect; offline queue bounded by `mqtt.max_queued_messages` (default 1000) ([daemon.md](daemon.md#startup-and-reconnect))
 - `MqttConnection.wait_connected(timeout)`
 - `gpio.backend` config key (`rpi` default, `mock`), `GpioBackendUnavailable` error, `create_backend(strict=True)`, and `GpioManager.backend_name`; startup log names the active GPIO backend and board ([daemon.md](daemon.md#gpio-backend))
+- **Command filter hook** — `mqttpi.gpio.commands` (`CommandRequest`, `CommandDecision`, `mutually_exclusive`, `block_while`); `GpioManager.add_command_filter` / `request_output`; `Daemon(command_filters=[...])` and `Daemon.gpio` / `Daemon.stop()` for embedding ([daemon.md](daemon.md#command-filters))
+- Example `examples/linear-actuator.yaml` + `linear_actuator_interlock.py`: reversible actuator with a software interlock
 - `RPi.GPIO` declared in `requirements.txt` for ARM Linux only (environment marker; x86 installs unchanged)
 - `MqttConnection` options `base_topic`, `availability_topic`, `will`, `payload_available`, `payload_not_available`, `keepalive`, plus `add_connect_callback()` and `is_connected`
 - GPIO switch / binary_sensor discovery payloads include `availability_topic`
@@ -33,6 +35,8 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Changed
 
 - **Breaking (intentional):** a missing or broken GPIO library is now a startup error (exit 1) instead of a silent fallback to the mock backend. Use `--mock-gpio` or `gpio: {backend: mock}` to run without hardware; library users can pass `create_backend(strict=False)` for the old behavior
+- `invert: true` on an **output** pin now makes it active-low (logical ON drives the pin LOW), as the example docs already described; previously `invert` was ignored for outputs. Configs that set `invert` on outputs will see the opposite pin level
+- Mock GPIO inputs idle at the level of their pull resistor (`pull: up` reads high), like an unconnected real pin
 - `MqttConnection.connect()` no longer raises when the broker is unreachable (uses paho `connect_async`); configuration errors raise `ValueError` from the constructor
 - `BmsMqttPublisher.connect()` is non-blocking by default (`blocking=True` for one-shot use; `mqttpi.bms.bridge --once` keeps failing fast)
 - HA discovery for GPIO is now published when `mqtt.homeassistant` is omitted entirely (discovery is documented as on by default)

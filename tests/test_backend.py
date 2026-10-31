@@ -96,3 +96,11 @@ def test_daemon_exits_nonzero_without_gpio_library(tmp_path, fake_paho, no_rpi_g
         rc = main(["-c", str(cfg), "-s", str(tmp_path / "none.yaml")])
     assert rc == 1
     assert "GPIO backend 'rpi' unavailable" in caplog.text
+
+
+def test_mock_input_idle_level_follows_pull() -> None:
+    be = MockGpioBackend()
+    be.setup_input(1, "up")
+    be.setup_input(2, "down")
+    be.setup_input(3, None)
+    assert (be.read(1), be.read(2), be.read(3)) == (True, False, False)

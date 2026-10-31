@@ -9,11 +9,11 @@
 
 ## Progress
 - [ ] Step 1: Design the hook interface
-- [ ] Step 2: Route all `/set` commands through it
-- [ ] Step 3: Republish true state on reject
-- [ ] Step 4: Library entry point for embedding applications
-- [ ] Step 5: Docs and examples
-- [ ] Done when holds
+- [x] Step 2: Route all `/set` commands through it
+- [x] Step 3: Republish true state on reject
+- [x] Step 4: Library entry point for embedding applications
+- [x] Step 5: Docs and examples
+- [x] Done when holds
 
 ## Goal
 Applications that embed mqttpi (or run alongside it) can inspect every incoming command before any output changes and accept, modify (e.g. clamp a PWM value), or reject it, so local interlocks and safety limits stay in charge while mqttpi still handles MQTT, discovery, and GPIO. Today `GpioManager.handle_mqtt_message` writes outputs directly.
@@ -64,3 +64,20 @@ Python Protocols for `CommandFilter`; immutable dataclasses for request and deci
 - With no filter, existing behavior and topics are unchanged (regression test)
 - Example interlock runs against the mock backend
 - Docs and changelog updated
+
+## Handoff
+- Branch `feature/command-filter-hook`, stacked on `feature/gpio-backend-fail-loud`.
+- **Step 1 (owner approval of the interface) is not ticked.** The interface is proposed by this PR itself. Approve it, or ask for changes, in PR review. It is implemented library-only; there is no config syntax, which is the plan's default without approval.
+- Interface: `mqttpi/gpio/commands.py`.
+  - `CommandRequest` is frozen and has `alias`, `value`, `current`, `source`, `payload`, and a read-only `states` snapshot.
+  - `CommandDecision.accept()`, `.modify(value, reason)` and `.reject(reason)`.
+  - A filter is any callable returning a decision or `None`.
+  - Filters run in order. A modify is passed on to later filters, the first reject wins, an exception counts as a reject, and a filter slower than 50 ms logs a warning.
+- Built-in filters: `mutually_exclusive(*aliases)` and `block_while(alias, input_alias, active=True)`.
+- `GpioManager` has `add_command_filter`, `remove_command_filter`, `command_filters`, `states()` and `request_output()`. All `/set` handling goes through `_apply_command` under a lock. A reject or modify re-publishes the true state.
+- `Daemon(command_filters=[...])` plus `Daemon.gpio` and `Daemon.stop()`. The run loop now waits on a `threading.Event`, so it can be embedded off the main thread.
+- Example: `examples/linear-actuator.yaml/.md` and `examples/linear_actuator_interlock.py`.
+- Bug fixes in the same write path:
+  - `invert: true` on outputs is now honored (active-low), as the docs already promised. This is a behavior change and is recorded in CHANGELOG.
+  - Mock inputs now idle at their pull level.
+- Verified: `pytest -q` 66 passed. This includes an integration test that runs the example script against a real broker and checks that the second direction is rejected and the state snaps back to OFF. Docs build OK.

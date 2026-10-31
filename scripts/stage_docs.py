@@ -124,6 +124,7 @@ def stage_examples() -> None:
         "pi4-pwm-relay.md",
         "relay-bank-32.md",
         "robot.md",
+        "linear-actuator.md",
     ]
     protocols = [
         "jbd-bms.md",
