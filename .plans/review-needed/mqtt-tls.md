@@ -8,11 +8,11 @@
 - **Depends on:** mqtt-resilient-connect
 
 ## Progress
-- [ ] Step 1: Define the TLS config schema
-- [ ] Step 2: Wire TLS into `MqttConnection`
-- [ ] Step 3: Port defaults and validation
-- [ ] Step 4: Docs
-- [ ] Step 5: Integration test against a TLS Mosquitto listener
+- [x] Step 1: Define the TLS config schema
+- [x] Step 2: Wire TLS into `MqttConnection`
+- [x] Step 3: Port defaults and validation
+- [x] Step 4: Docs
+- [x] Step 5: Integration test against a TLS Mosquitto listener
 - [ ] Done when holds
 
 ## Goal
@@ -61,3 +61,16 @@ Python per `.anchor/conventions.md`: small composable classes, Protocols or narr
 - TLS integration test passes (good CA connects, wrong CA refused)
 - `tls: false` behavior unchanged (regression test)
 - Docs and changelog updated
+
+## Handoff
+- Branch `feature/mqtt-tls`, stacked on `feature/command-filter-hook`. This is the top of the P1 stack.
+- `mqttpi/config.py`: `TlsSettings`, `parse_tls()` (accepts a bool or a mapping; validates unknown keys, missing files, keyfile-without-certfile and a non-bool `insecure`), and `mqtt_port()`, which defaults to 8883 only when TLS is on and no port is set.
+- `apply_tls()` in `mqttpi/mqtt/client.py`:
+  - `tls_set(cert_reqs=CERT_REQUIRED, PROTOCOL_TLS_CLIENT)`.
+  - `tls_insecure_set` plus a warning when `insecure` is on.
+  - Runs in the constructor, so bad PEM files raise `ValueError` up front.
+  - Used by both `MqttConnection` and `BmsMqttPublisher`.
+- `on_connect_fail` reads the in-flight exception (`sys.exc_info`). A TLS handshake failure is logged with a hint to check the CA, the certificate and the clock.
+- The startup log shows the transport. Key material is never logged; paths are.
+- Integration tests use a CA and server certificate generated at test time with the openssl CLI (`tests/certs.py`) and a TLS listener on amqtt or mosquitto. A connect with the right CA succeeds; with the wrong CA the daemon is refused, logged, and keeps running.
+- Verified: `pytest -q` 85 passed. Docs build OK.

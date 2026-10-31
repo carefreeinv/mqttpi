@@ -13,7 +13,7 @@ from typing import Any, Dict
 
 from mqttpi.bms.ha_mqtt import BmsMqttPublisher
 from mqttpi.bms.jbd_uart import JbdUartClient
-from mqttpi.config import load_config
+from mqttpi.config import load_config, mqtt_port, parse_tls
 
 log = logging.getLogger("mqttpi.bms")
 
@@ -33,9 +33,11 @@ def build_publisher(cfg: Dict[str, Any]) -> BmsMqttPublisher:
     device_id = device_cfg.get("id", "bms-node")
     ha_name = ha_cfg.get("name") or device_cfg.get("ha", {}).get("name") or "LiFePO4 Battery"
 
+    tls = parse_tls(mqtt_cfg.get("tls"))
     return BmsMqttPublisher(
         host=mqtt_cfg.get("host", "localhost"),
-        port=int(mqtt_cfg.get("port", 1883)),
+        port=mqtt_port(mqtt_cfg, tls),
+        tls=tls,
         username=mqtt_cfg.get("username", ""),
         password=mqtt_cfg.get("password", ""),
         base_topic=mqtt_cfg.get("base_topic", f"mqttpi/{device_id}"),
