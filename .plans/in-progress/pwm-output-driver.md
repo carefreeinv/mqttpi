@@ -14,6 +14,7 @@
 - [ ] Step 4: Docs and bench test
 - [ ] Done when holds
 - 2026-11-01 `/work`: `SoftwarePwm.stop()` sets 0% before `RPi.GPIO.PWM.stop()` (PR #13 Needs Work). Bench still open.
+- 2026-11-01 `/work` PR #13: after-filter duty uses the same `ha.min` clamp as the pre-filter path. Step 4 bench is **human** (Pi LED/fan); cannot record on this host.
 
 ## Goal
 The documented `pwm_output` config contract works: a pin configured as PWM is exposed as a Home Assistant `number` (0–100 %), accepts values on `{base_topic}/gpio/{alias}/set`, and drives hardware PWM where available, with commands passing through the pre-actuation filter.
