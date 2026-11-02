@@ -93,7 +93,7 @@ def test_software_pwm_wraps_rpi_gpio(caplog) -> None:
     ch.set_frequency(500)
     ch.stop()
     assert g.calls == [("setup", 12, "out", 0), ("start", 12, 25000.0, 10.0), ("duty", 100.0), ("freq", 500.0),
-                       ("stop",)]
+                       ("duty", 0.0), ("stop",)]
 
 
 def fake_sysfs(tmp_path, chip=0, channel=0):

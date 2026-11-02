@@ -90,6 +90,8 @@ class SoftwarePwm:
         self._pwm.ChangeFrequency(float(hz))
 
     def stop(self) -> None:
+        # RPi.GPIO.PWM.stop() leaves the last level on the pin until cleanup.
+        self._pwm.ChangeDutyCycle(0.0)
         self._pwm.stop()
 
 
