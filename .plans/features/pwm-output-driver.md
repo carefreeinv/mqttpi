@@ -57,3 +57,12 @@ Python per `.anchor/conventions.md`: small composable classes, Protocols or narr
 - `pytest -q` passes
 - `examples/pwm-bank.yaml` runs with `--mock-gpio`
 - Bench result recorded
+
+## Review notes (/review 2026-11-01, PR #13, Needs Work)
+
+AI verdict: **REVISE**. Survey: Needs Work. No merge.
+
+Actionable:
+- `SoftwarePwm.stop()` must set duty 0% before `RPi.GPIO.PWM.stop()` so software PWM matches mock/sysfs and `daemon.md` (`mqttpi/gpio/pwm.py`). Update `test_software_pwm_wraps_rpi_gpio`.
+- Record the hardware bench (or explicitly park Step 4 / Done-when).
+- Optional: after-filter duty should re-apply `ha.min`; default `pwm_mode: software` vs plan “hardware preferred” — update the plan if the product decision is opt-in hardware.

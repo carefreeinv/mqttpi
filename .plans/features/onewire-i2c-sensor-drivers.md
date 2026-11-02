@@ -62,3 +62,12 @@ Python per `.anchor/conventions.md`: small composable classes, Protocols or narr
 - `pytest -q` passes for all drivers
 - `examples/sensors-i2c-onewire.yaml` runs with fakes
 - New schemas documented with examples; bench results recorded
+
+## Review notes (/review 2026-11-01, PR #14, Needs Work)
+
+AI verdict: **REVISE**. Survey: Needs Work. No merge.
+
+Actionable:
+- `bmp280` must not advertise humidity. Split default entities from `bme280` (`mqttpi/sensors/drivers/i2c_climate.py`); assert parse_sensors for `type: bmp280` is temperature + pressure only.
+- Record (or waive) the hardware bench.
+- Optional: wrap DS18B20 missing sysfs as `IOError`; owner decision on implementing ADS1115/INA drivers (step 5).
