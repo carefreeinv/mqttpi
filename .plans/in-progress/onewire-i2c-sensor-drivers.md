@@ -8,13 +8,14 @@
 - **Depends on:** ha-numeric-sensor-entities
 
 ## Progress
-- [ ] Step 1: DS18B20 1-Wire driver
-- [ ] Step 2: I2C climate sensor drivers (BME280, SHT3x/SHT4x)
-- [ ] Step 3: Config schema for an I2C ADC (ADS1115-class) under `analog_input`
-- [ ] Step 4: Config schema for a current/voltage monitor (INA219/INA226-class)
+- [x] Step 1: DS18B20 1-Wire driver
+- [x] Step 2: I2C climate sensor drivers (BME280, SHT3x/SHT4x)
+- [x] Step 3: Config schema for an I2C ADC (ADS1115-class) under `analog_input`
+- [x] Step 4: Config schema for a current/voltage monitor (INA219/INA226-class)
 - [ ] Step 5: Optional implementations of the two new schemas
 - [ ] Step 6: Docs and bench test
 - [ ] Done when holds
+- 2026-11-01 `/work`: `Bmp280Driver` so `type: bmp280` does not advertise humidity (PR #14 Needs Work). Bench and step 5 still open.
 
 ## Goal
 The documented 1-Wire and I2C sensor config contracts work on Linux boards, and the config contract gains two missing device types: an I2C ADC so boards without an ADC can use `analog_input`, and a current/voltage/power monitor. Readings publish through the shared numeric sensor entities.
