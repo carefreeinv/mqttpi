@@ -46,6 +46,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
+- README Status lists PWM, MCP23017 expanders, and read-only `can_frame` CAN decode as implemented (Victron / RV-C / CAN transmit remain contracts)
 - **Breaking (intentional):** a missing or broken GPIO library is now a startup error (exit 1) instead of a silent fallback to the mock backend. Use `--mock-gpio` or `gpio: {backend: mock}` to run without hardware; library users can pass `create_backend(strict=False)` for the old behavior
 - `invert: true` on an **output** pin now makes it active-low (logical ON drives the pin LOW), as the example docs already described; previously `invert` was ignored for outputs. Configs that set `invert` on outputs will see the opposite pin level
 - Mock GPIO inputs idle at the level of their pull resistor (`pull: up` reads high), like an unconnected real pin
@@ -69,15 +70,15 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **Software PWM shutdown** — `SoftwarePwm.stop()` now drives 0 % before `RPi.GPIO.PWM.stop()`, matching mock/sysfs PWM and the documented 0 % on GPIO cleanup
 - **PWM command filters** — a filter that lowers duty still cannot park a live channel below `ha.min` (0 % remains off)
 - **`bmp280` humidity entity** — `type: bmp280` no longer advertises a humidity reading (the chip has none). Discovery used BME280 defaults, so Home Assistant showed an online humidity sensor with no state. `Bmp280Driver` defaults to temperature and pressure only
+- **CAN reader teardown** — closing one `can_frame` sensor no longer stops every SocketCAN reader; listeners are refcounted per interface
 - **GPIO input debounce** — an input change that settled inside the debounce window (a press or bounce shorter than `debounce_ms` ending in the other state) was never published, leaving the reported state stuck. Inputs now publish a value once it has been stable for `debounce_ms` (default 50 ms); bounces restart the timer. Note: state changes are now reported after `debounce_ms` rather than on the first edge ([daemon.md](daemon.md#gpio-inputs-and-debounce))
 - **JBD read requests** — the request checksum wrongly included the `0xA5` read byte (`DD A5 03 00 FF 58 77`); requests now match the protocol (`DD A5 03 00 FF FD 77`). BMS firmware that validates request checksums did not answer before
 - **JBD balancing cells** — balance bits were decoded in reverse order; bit n of the low balance word is now cell n+1 and the high word covers cells 17–32 (`balancing_cells` sensor)
 
 ### Planned
 
-- PWM, CAN, I2C expanders, Victron, **RFID reader driver** in unified daemon
+- Victron, RV-C decode, CAN transmit, **RFID reader driver** in unified daemon
 - Pico W firmware / MicroPython port
-- MCP23017 expander driver
 
 ## [0.2.0] - 2026-06-28
 

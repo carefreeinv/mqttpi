@@ -34,7 +34,10 @@ flowchart LR
 | Config schema & examples | Ready |
 | Unified daemon (`python3 -m mqttpi`) | **Implemented** — GPIO outputs/inputs + optional BMS |
 | JBD BMS → MQTT → HA | **Implemented** (daemon or `mqttpi.bms.bridge`) |
-| PWM / CAN / I2C expanders / Victron | Config contract — not in daemon yet |
+| PWM outputs | **Implemented** (software default; hardware sysfs opt-in) |
+| MCP23017 I2C expanders | **Implemented** |
+| CAN (`type: can_frame`, SocketCAN, read-only) | **Implemented** |
+| Victron / RV-C / CAN transmit | Config contract — not in daemon yet |
 
 ## Quick start
 

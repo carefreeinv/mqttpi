@@ -133,16 +133,23 @@ class CanReader:
         with self._lock:
             self._listeners.append(fn)
 
+    def remove_listener(self, fn: Listener) -> None:
+        with self._lock:
+            self._listeners = [x for x in self._listeners if x is not fn]
+
     def start(self) -> None:
         with self._lock:
             if self._thread is None:
+                self._stop.clear()
                 self._thread = threading.Thread(target=self._run, name=f"mqttpi-can-{self.channel}", daemon=True)
                 self._thread.start()
 
     def stop(self) -> None:
         self._stop.set()
-        if self._thread is not None:
-            self._thread.join(timeout=3)
+        thread = self._thread
+        if thread is not None:
+            thread.join(timeout=3)
+            self._thread = None
 
     def _run(self) -> None:
         delay = self._backoff_s
@@ -205,18 +212,34 @@ class CanReader:
 
 
 _readers: Dict[str, CanReader] = {}
+_reader_refs: Dict[str, int] = {}
 _readers_lock = threading.Lock()
 _reader_factory: TransportFactory = SocketCanTransport
 
 
 def get_reader(channel: str) -> CanReader:
-    """Shared, started reader per interface."""
+    """Shared, started reader per interface. Pair with ``release_reader``."""
     with _readers_lock:
         reader = _readers.get(channel)
         if reader is None:
             reader = _readers[channel] = CanReader(channel, _reader_factory)
+            _reader_refs[channel] = 0
+        _reader_refs[channel] = _reader_refs.get(channel, 0) + 1
         reader.start()
         return reader
+
+
+def release_reader(channel: str) -> None:
+    """Drop one user of the shared reader; stop it when the last one leaves."""
+    with _readers_lock:
+        n = _reader_refs.get(channel, 0) - 1
+        if n > 0:
+            _reader_refs[channel] = n
+            return
+        _reader_refs.pop(channel, None)
+        reader = _readers.pop(channel, None)
+    if reader is not None:
+        reader.stop()
 
 
 def set_transport_factory(factory: TransportFactory) -> None:
@@ -226,6 +249,7 @@ def set_transport_factory(factory: TransportFactory) -> None:
         for r in _readers.values():
             r.stop()
         _readers.clear()
+        _reader_refs.clear()
         _reader_factory = factory
 
 

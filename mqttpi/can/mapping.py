@@ -17,7 +17,7 @@ import time
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Mapping, Optional
 
-from mqttpi.can.transport import CanFrame, CanReader, get_reader, stop_readers
+from mqttpi.can.transport import CanFrame, CanReader, get_reader, release_reader
 from mqttpi.sensors.model import Reading
 
 
@@ -111,6 +111,7 @@ class CanFrameDriver:
         self._lock = threading.Lock()
         self._clock = clock
         self._attached = False
+        self._shared = False
 
     @classmethod
     def from_config(cls, spec: Dict[str, Any]) -> "CanFrameDriver":
@@ -136,11 +137,13 @@ class CanFrameDriver:
         return cls(matcher, fields, channel=channel, max_age_s=float(max_age) if max_age is not None else None)
 
     def _attach(self) -> None:
-        if not self._attached:
-            reader = self._reader or get_reader(self.channel)
-            reader.add_listener(self.on_frame)
-            self._reader = reader
-            self._attached = True
+        if self._attached:
+            return
+        if self._reader is None:
+            self._reader = get_reader(self.channel)
+            self._shared = True
+        self._reader.add_listener(self.on_frame)
+        self._attached = True
 
     def on_frame(self, frame: CanFrame) -> None:
         if self.matcher.matches(frame):
@@ -158,10 +161,15 @@ class CanFrameDriver:
         return Reading({k: f.decode(frame.data) for k, f in self.fields.items()}, timestamp=frame.timestamp)
 
     def close(self) -> None:
-        """Daemon shutdown: stop the reader threads (idempotent; readers are
-        shared per interface, so every CAN sensor stops together)."""
-        if self._attached:
-            stop_readers()
-            if self._reader is not None:
-                self._reader.stop()  # injected reader (not in the shared registry)
-            self._attached = False
+        """Detach this sensor. Shared readers stop when the last user leaves."""
+        if not self._attached:
+            return
+        reader = self._reader
+        if reader is not None:
+            reader.remove_listener(self.on_frame)
+        if self._shared:
+            release_reader(self.channel)
+            self._shared = False
+        elif reader is not None:
+            reader.stop()
+        self._attached = False

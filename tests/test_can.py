@@ -227,6 +227,34 @@ def test_end_to_end_through_shared_reader() -> None:
         reset_transport_factory()
 
 
+def test_close_one_driver_does_not_stop_sibling_on_same_interface() -> None:
+    transports = []
+
+    def factory(ch):
+        t = FakeTransport(ch)
+        transports.append(t)
+        return t
+
+    set_transport_factory(factory)
+    try:
+        pairs = parse_sensors({"sensors": {
+            "a": dict(FRAME_SENSOR, id="0x351"),
+            "b": dict(FRAME_SENSOR, id="0x352"),
+        }})
+        da, db = pairs[0][1], pairs[1][1]
+        with pytest.raises(IOError):
+            da.read()
+        with pytest.raises(IOError):
+            db.read()
+        assert len(transports) == 1
+        da.close()
+        transports[0].q.put(CanFrame(0x352, bytes([0x64, 0, 0, 0, 0, 0, 0, 0])))
+        assert wait_until(lambda: _try(db) == {"voltage": pytest.approx(10.0), "alarm": 0.0})
+        db.close()
+    finally:
+        reset_transport_factory()
+
+
 def _try(drv):
     try:
         return drv.read().values
