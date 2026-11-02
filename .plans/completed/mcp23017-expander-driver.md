@@ -68,3 +68,4 @@ Python per `.anchor/conventions.md`: small composable classes, Protocols or narr
   - power-cycle one chip while running and confirm its outputs are restored within `check_interval_s`;
   - unplug SDA and confirm the daemon keeps running and recovers.
 - **Decision:** expander pins are released to inputs on shutdown, matching `RPi.GPIO.cleanup()`.
+- Merged to local `dev` by `/review` Approve 2026-11-01 — PRs 13–15 (`767de99`).

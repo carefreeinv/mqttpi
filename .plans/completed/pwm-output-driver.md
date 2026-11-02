@@ -60,15 +60,13 @@ Python per `.anchor/conventions.md`: small composable classes, Protocols or narr
 - `examples/pwm-bank.yaml` runs with `--mock-gpio`
 - Bench result recorded
 
-<<<<<<<< HEAD:.plans/in-progress/pwm-output-driver.md
 ## Review notes (/review 2026-11-01, PR #13, Needs Work — second pass)
 
-AI verdict: **ACCEPT**. Survey: Needs Work. No merge.
+AI verdict: **ACCEPT**. Survey: Needs Work. No merge at that pass.
 
-`SoftwarePwm.stop()` 0% is done (`6f1892d`). Remaining:
+`SoftwarePwm.stop()` 0% is done (`6f1892d`). After-filter duty re-applies `ha.min` (`8d41440`). Remaining:
 - Record the hardware bench (or park Step 4 / Done-when in this plan).
-- Optional: after-filter duty re-apply `ha.min` (`mqttpi/gpio/manager.py` ~317).
-========
+
 ## Handoff
 
 - Implemented on branch `feature/pwm-output-driver` (stacked on `feature/ha-numeric-sensor-entities`).
@@ -79,4 +77,4 @@ AI verdict: **ACCEPT**. Survey: Needs Work. No merge.
   - Pi 5 `pwmchip` numbering;
   - a dual-PWM H-bridge actuator with the interlock script.
 - Decision: software PWM is the default and hardware PWM is opt-in (`pwm_mode: hardware`), so an overlay routed to a different pin cannot drive the wrong pin.
->>>>>>>> feature/pwm-output-driver:.plans/review-needed/pwm-output-driver.md
+- Merged to local `dev` by `/review` Approve 2026-11-01 — PRs 13–15 (`8d41440`).

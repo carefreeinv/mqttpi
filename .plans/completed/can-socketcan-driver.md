@@ -54,13 +54,15 @@ Python per `.anchor/conventions.md`: small composable classes, Protocols or narr
 - Step looks overqualified for its assigned tier (boilerplate/rename/formatting on a frontier route) → downgrade to smaller/local model instead
 
 ## Done when
-- `pytest -q` passes, including `vcan0` tests on Linux
-- `examples/can-rvc.yaml` (mapped subset) runs against `vcan0`
-- Docs and changelog updated
+- `pytest -q` passes (Linux `vcan0` roundtrip is skipif when `/sys/class/net/vcan0` is missing)
+- `examples/can-frames.yaml` loads with the fake transport / `parse_sensors`
+- Docs and changelog describe read-only `can_frame` (RV-C / TX remain contracts)
 
-## Review notes (/review 2026-11-01, PR #16, Needs Work — second pass)
+## Review notes (/review 2026-11-02, PR #16, Needs Work — third pass)
 
 AI verdict: **REVISE**. Survey: Needs Work. No merge.
 
-README Status and `close()` refcount are done (`b9c79a4`). Remaining:
-- Bring up `vcan0` and unskip `test_vcan0_roundtrip`, **or** drop/rewrite Done-when so it does not require vcan0 and `examples/can-rvc.yaml` on vcan0 (`can-frames.yaml` is the Linux mapped example).
+README Status and `close()` refcount remain done (`b9c79a4`). Remaining:
+- Bring up `vcan0` and unskip `test_vcan0_roundtrip`, **or** rewrite Done-when so it does not require vcan0 / `examples/can-rvc.yaml` (`can-frames.yaml` is the Linux mapped example).
+- Rebase onto local `dev` (`50168f0`) before merge: keep both `Bmp280Driver` and `CanFrameDriver` in `mqttpi/sensors/drivers/__init__.py`; combine CHANGELOG `[Unreleased]` bullets.
+- Optional: `stop_readers()` should clear `_reader_refs` like `set_transport_factory`.

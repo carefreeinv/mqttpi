@@ -64,16 +64,17 @@ Python per `.anchor/conventions.md`: small composable classes, Protocols or narr
 - `examples/sensors-i2c-onewire.yaml` runs with fakes
 - New schemas documented with examples; bench results recorded
 
-<<<<<<<< HEAD:.plans/in-progress/onewire-i2c-sensor-drivers.md
 ## Review notes (/review 2026-11-01, PR #14, Needs Work)
 
-AI verdict: **REVISE**. Survey: Needs Work. No merge.
+AI verdict: **REVISE**. Survey: Needs Work. No merge at that pass.
 
-Actionable:
+Actionable then:
 - `bmp280` must not advertise humidity. Split default entities from `bme280` (`mqttpi/sensors/drivers/i2c_climate.py`); assert parse_sensors for `type: bmp280` is temperature + pressure only.
 - Record (or waive) the hardware bench.
 - Optional: wrap DS18B20 missing sysfs as `IOError`; owner decision on implementing ADS1115/INA drivers (step 5).
-========
+
+`Bmp280Driver` (no humidity) landed in `d9eba5e`.
+
 ## Handoff
 
 - Implemented on branch `feature/onewire-i2c-sensor-drivers`, stacked on `feature/pwm-output-driver`.
@@ -86,4 +87,4 @@ Actionable:
   - BME280 at 0x76;
   - SHT31 and SHT41 at 0x44;
   - unplug a sensor during a run and confirm only that entity goes offline.
->>>>>>>> feature/onewire-i2c-sensor-drivers:.plans/review-needed/onewire-i2c-sensor-drivers.md
+- Merged to local `dev` by `/review` Approve 2026-11-01 — PRs 13–15 (`d9eba5e`).
