@@ -58,12 +58,9 @@ Python per `.anchor/conventions.md`: small composable classes, Protocols or narr
 - `examples/can-rvc.yaml` (mapped subset) runs against `vcan0`
 - Docs and changelog updated
 
-## Review notes (/review 2026-11-01, PR #16, Needs Work)
+## Review notes (/review 2026-11-01, PR #16, Needs Work — second pass)
 
 AI verdict: **REVISE**. Survey: Needs Work. No merge.
 
-Actionable:
-- Align README Status/Features with the shipped slice (read-only `can_frame`) or keep calling CAN unimplemented until RV-C/`buses.can` exist. Update plan Done-when if the reduced scope is the product decision.
-- Demonstrate `vcan0` (modprobe + unskip) or drop that Done-when line.
-- `CanFrameDriver.close()` must not stop every CAN reader (`stop_readers()`); use refcount/unregister.
-- Optional: bits as binary entities; stop treating unused `buses.can` YAML as live config.
+README Status and `close()` refcount are done (`b9c79a4`). Remaining:
+- Bring up `vcan0` and unskip `test_vcan0_roundtrip`, **or** drop/rewrite Done-when so it does not require vcan0 and `examples/can-rvc.yaml` on vcan0 (`can-frames.yaml` is the Linux mapped example).
