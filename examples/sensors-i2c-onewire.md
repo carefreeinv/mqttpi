@@ -10,7 +10,7 @@ Use when you plan to attach:
 - **1-Wire:** DS18B20 temperature strings (GP7)
 - Immediate HA visibility for **contact** and **leak** inputs while bus sensor discovery matures
 
-Bus-attached sensors (BME280, DS18B20) will get full HA MQTT discovery in a **later implementation phase**; this example documents bus toggles and working GPIO entities today.
+The Linux daemon publishes the bus-attached sensors (a BME280 and a DS18B20) as HA **sensor** entities, alongside the GPIO inputs. Driver details and setup are in [daemon.md](../daemon.md#sensor-drivers). On a Raspberry Pi, set `device.board` (e.g. `pi4`). Enable I2C with `raspi-config` and 1-Wire with `dtoverlay=w1-gpio,gpiopin=4`, then `pip install smbus2`.
 
 ## Quick start
 
@@ -58,17 +58,21 @@ Enabling I2C **reserves GP0/GP1**; do not assign those as digital I/O in `pins[]
 
 ## MQTT & HA entities expected
 
-**Today (GPIO inputs):**
+**GPIO inputs:**
 
 | Entity | Type | Class | Topic under `mqttpi/sensors-01` |
 |--------|------|-------|----------------------------------|
 | `binary_sensor.enclosure_lid` | binary_sensor | opening | `gpio/enclosure_lid/state` |
 | `binary_sensor.leak_detector` | binary_sensor | moisture | `gpio/leak_detector/state` |
 
-**Planned (bus sensors, later phase):**
+**Bus sensors** (Linux daemon):
 
-- I2C environmental sensors → HA **sensor** entities (temperature, humidity, pressure)
-- 1-Wire DS18B20 → HA **sensor** per probe address
+| Entity | Class | Topic under `mqttpi/sensors-01` |
+|--------|-------|----------------------------------|
+| `sensor.air_temperature` | temperature (°C) | `sensors/air_temperature/state` |
+| `sensor.air_humidity` | humidity (%) | `sensors/air_humidity/state` |
+| `sensor.air_pressure` | atmospheric_pressure (hPa) | `sensors/air_pressure/state` |
+| `sensor.probe_temperature` | temperature (°C) | `sensors/probe_temperature/state` |
 
 Discovery prefix: `homeassistant`; device name **Sensor Node**.
 
@@ -83,13 +87,13 @@ Discovery prefix: `homeassistant`; device name **Sensor Node**.
 ## FAQ
 
 **Q: Why enable buses if only GPIO shows in HA?**  
-A: This config prepares hardware wiring and bus pin locks before firmware publishes BME280/DS18B20 discovery.
+A: The bus sensors appear under `sensors:` (the Linux daemon). The `buses:` block reserves their pins, so validation catches conflicts.
 
 **Q: Can I add a BME280 now?**  
-A: Wire it to GP0/GP1; HA entities will appear when the sensor driver phase ships. Until then, GPIO entities still work.
+A: Yes. On a Pi, wire it to GPIO 2/3 (SDA/SCL), run `i2cdetect -y 1` to find the address (0x76 or 0x77), and set `sensors.air.address`.
 
 **Q: Multiple DS18B20 on one wire?**  
-A: Yes on GP7—standard 1-Wire daisy chain. Discovery will likely emit one entity per ROM address.
+A: Yes, as a standard 1-Wire daisy chain. Add one `type: ds18b20` sensor per probe, each with its own `address` (`ls /sys/bus/w1/devices/`).
 
 **Q: I need SPI display and I2C sensor together.**  
 A: Enable SPI in config (GP2–GP5) and keep I2C on GP0/GP1—no overlap. See [full-peripherals.md](full-peripherals.md) for all buses on.

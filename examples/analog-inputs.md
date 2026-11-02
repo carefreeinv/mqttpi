@@ -76,7 +76,10 @@ A: Default balance for telemetry vs. broker load. Decrease `interval_ms` per pin
 A: Implementation maps raw ADC counts to the min/max range for MQTT state and HA discovery `state_class` display.
 
 **Q: Should I use I2C sensors instead?**  
-A: For temperature/humidity (BME280) or precision ADCs, enable I2C in [sensors-i2c-onewire.md](sensors-i2c-onewire.md). Bus-attached sensor HA discovery is planned for a later phase.
+A: For temperature/humidity, use a BME280 or SHT3x/SHT4x on I2C (see [sensors-i2c-onewire.md](sensors-i2c-onewire.md)). The Linux daemon supports them.
+
+**Q: My board has no ADC (Raspberry Pi 0–5). Can I still use `analog_input`?**
+A: The last entry in this example (`supply_voltage`) documents the contract for an external I2C ADC (ADS1115-class), with `source: ads1115`, `bus`, `address`, `channel`, `gain`, `data_rate` and a linear `ha.scale`. **Schema only:** the driver is not implemented yet, so these entries are skipped at startup.
 
 **Q: GP26 conflicts with something on my board.**  
 A: On bare Pico W, GP26 is ADC0. Some carriers reassign labels—always trace to RP2040 GPIO number.

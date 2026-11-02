@@ -88,6 +88,28 @@ Discovery: `homeassistant/sensor/<device.id>_<alias>/config` (or the node-id lay
 
 **Writing a driver:** implement `read() -> mqttpi.sensors.Reading` (values keyed by reading name, plus optional `quality`) and register a factory: `register_driver("mychip", lambda spec: MyChip(spec["address"]))`. Optional `default_readings` supplies units and classes, and optional `close()` runs on shutdown. Tests can use a fake driver in the same way; see `tests/test_sensors.py`.
 
+## Sensor drivers
+
+| `type` | Readings (defaults) | Bus / setup |
+|--------|---------------------|-------------|
+| `cpu_temperature` | `temperature` °C | Linux thermal sysfs (no setup) |
+| `ds18b20` | `temperature` °C (0.01) | 1-Wire through the kernel `w1` sysfs. Add `dtoverlay=w1-gpio,gpiopin=4` to `/boot/firmware/config.txt` and a 4.7 kΩ pull-up to 3.3 V. `address: 28-…` (from `ls /sys/bus/w1/devices/`) is optional with a single probe |
+| `bme280` / `bmp280` | `temperature` °C, `humidity` % (BME280 only), `pressure` hPa | I2C, `address` 0x76 (default) or 0x77, forced mode with ×1 oversampling |
+| `sht3x` (`sht30`/`sht31`/`sht35`) | `temperature` °C, `humidity` % | I2C, `address` 0x44 (default) or 0x45, single shot with a CRC check |
+| `sht4x` (`sht40`/`sht41`/`sht45`) | `temperature` °C, `humidity` % | I2C, `address` 0x44, high precision with a CRC check |
+
+- **I2C setup:**
+  - Enable the bus with `sudo raspi-config` → Interface Options → I2C (or `dtparam=i2c_arm=on`).
+  - Install `smbus2` (`pip install smbus2`, or the `mqttpi[i2c]` extra).
+  - Find addresses with `i2cdetect -y 1`. `bus:` selects `/dev/i2c-N` (default 1).
+  - Sensors on one bus share a single handle and a lock.
+- **Failure handling:** buses are opened on the first read, not while the config loads. A missing `smbus2`, an absent `/dev/i2c-1`, a NACK, a CRC error or an unplugged probe each count as a failed read. The sensor goes `offline` once `stale_after_s` passes, and relays, PWM and the BMS keep running.
+- **DS18B20 power-on value:** an 85.000 °C reading (the power-on value) is published with quality `uncertain`. Out-of-range values (for example −127 °C from a bad contact) are treated as failed reads.
+- **Bus lockups:** if an I2C device holds SDA low after a brown-out, reads fail until it is power-cycled. Power I2C sensors from a switchable rail on unattended nodes.
+- **Documented ahead of drivers** (configs load, and the entries are skipped with a warning):
+  - `analog_input` pins with `source: ads1115` (an external ADC, [analog-inputs.yaml](examples/analog-inputs.yaml));
+  - `ina219` / `ina226` power monitors ([power-monitor.md](examples/power-monitor.md)).
+
 ## PWM outputs
 
 A pin with `direction: pwm_output` becomes a Home Assistant `number` entity. Its state is on `{base_topic}/gpio/<alias>/state` and commands go to `{base_topic}/gpio/<alias>/set`. The payload is the duty in percent (`0`–`100`, decimals allowed), or `ON` (= `ha.max`) / `OFF` (= 0).

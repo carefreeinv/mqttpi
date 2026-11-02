@@ -77,3 +77,26 @@ pins:
       scale:
         min: 0.0
         max: 3.3
+
+  # External I2C ADC (ADS1115-class) for boards without an ADC (Pi 0-5).
+  # Schema only: documented ahead of its driver; entries are skipped today.
+  - alias: supply_voltage
+    direction: analog_input
+    source: ads1115
+    bus: 1
+    address: 0x48             # 0x48-0x4B (ADDR pin)
+    channel: 0                # A0-A3 single-ended; or "0-1" for differential
+    gain: 1                   # PGA full scale: 2/3=±6.144 V, 1=±4.096 V, 2=±2.048 V, 4, 8, 16
+    data_rate: 128            # samples/s
+    publish:
+      interval_ms: 5000
+    ha:
+      name: "Supply Voltage"
+      device_class: voltage
+      state_class: measurement
+      unit_of_measurement: "V"
+      scale:                  # linear map of measured volts → published value
+        min: 0.0              # here: 1:4 divider, 0-3.3 V in → 0-13.2 V out
+        max: 13.2
+        in_min: 0.0
+        in_max: 3.3
