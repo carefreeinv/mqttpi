@@ -14,6 +14,7 @@ from mqttpi.sensors.config import parse_sensors, sensors_configured
 from mqttpi.sensors.drivers.ds18b20 import Ds18b20Driver, list_probes, parse_w1_slave
 from mqttpi.sensors.drivers.i2c_climate import (
     Bme280Driver,
+    Bmp280Driver,
     Sht3xDriver,
     Sht4xDriver,
     bme280_humidity,
@@ -184,6 +185,13 @@ def test_bmp280_has_no_humidity_and_bad_chip_id_fails() -> None:
     bus.regs[0x76] = bme280_regs(chip=0x00)
     with pytest.raises(IOError, match="chip id"):
         Bme280Driver(bus, 0x76, sleep=NOSLEEP).read()
+
+
+def test_bmp280_config_entities_are_temperature_and_pressure_only() -> None:
+    [(sc, drv)] = parse_sensors({"sensors": {"baro": {"type": "bmp280"}}})
+    assert isinstance(drv, Bmp280Driver)
+    assert [e.key for e in sc.entities] == ["temperature", "pressure"]
+    assert "humidity" not in {e.key for e in sc.entities}
 
 
 def test_bme280_conversion_timeout_and_nack() -> None:

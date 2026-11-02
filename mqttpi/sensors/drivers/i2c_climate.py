@@ -103,6 +103,16 @@ class Bme280Driver(_I2cDevice):
         return Reading(values)
 
 
+class Bmp280Driver(Bme280Driver):
+    """BMP280: same compensation as BME280, no humidity channel or HA entity."""
+
+    default_readings = {"temperature": _TEMP, "pressure": _PRES}
+
+    def __init__(self, bus: BusRef = 1, address: int = 0x76, sleep: Sleep = time.sleep) -> None:
+        super().__init__(bus, address, sleep)
+        self.has_humidity = False
+
+
 def _s8(b: int) -> int:
     return b - 256 if b > 127 else b
 
