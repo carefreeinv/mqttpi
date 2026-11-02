@@ -7,7 +7,7 @@ The **unified mqttpi daemon** reads `config.yaml` (+ `secrets.yaml`) and starts 
 | `pins[]` with `direction: output` or `input` | GPIO → MQTT → Home Assistant | **Implemented** (v0.2) |
 | `bms.enabled: true` | JBD UART → MQTT → HA | **Implemented** |
 
-Other example configs (PWM, CAN, I2C expanders, Victron, …) remain **config contracts** until their drivers are added.
+PWM outputs, sensors and MCP23017 expanders are implemented too (sections below). Other example configs (CAN, Victron, …) remain **config contracts** until their drivers are added.
 
 ## Supported examples today
 
@@ -109,6 +109,43 @@ Discovery: `homeassistant/sensor/<device.id>_<alias>/config` (or the node-id lay
 - **Documented ahead of drivers** (configs load, and the entries are skipped with a warning):
   - `analog_input` pins with `source: ads1115` (an external ADC, [analog-inputs.yaml](examples/analog-inputs.yaml));
   - `ina219` / `ina226` power monitors ([power-monitor.md](examples/power-monitor.md)).
+
+## I2C GPIO expanders (MCP23017)
+
+Pins on MCP23017 chips work like native GPIO. They support `output` and `input` (with `invert`, `debounce_ms`, `initial`), and they get the same HA entities, topics and command filters.
+
+```yaml
+expanders:
+  mcp23017:
+    enabled: true
+    bus: 1                    # Linux /dev/i2c-1 (default 1)
+    check_interval_s: 5       # health check: re-apply registers after a chip reset
+    chips:
+      - address: 0x20         # 0x20-0x27 (A0-A2 straps)
+      - address: 0x21
+        reset_pin: 6          # optional native GPIO wired to RESET; held high (released)
+
+pins:
+  - alias: relay_01
+    direction: output
+    invert: true              # active-low relay boards
+    expander: { chip: 0x20, pin: 0 }      # 0-7 = GPA0-7, 8-15 = GPB0-7; "A0".."B7" also accepted
+  - alias: door
+    direction: input
+    pull: up                  # MCP23017 has pull-ups only; pull: down is an error
+    expander: { chip: 0x21, pin: B0 }
+```
+
+- **Setup:** enable I2C (`sudo raspi-config` → Interface Options → I2C), install `pip install smbus2` (or `mqttpi[i2c]`), then check the chips with `i2cdetect -y 1`. `--mock-gpio` uses in-memory chips, so expander configs also run without hardware.
+- **Inputs are polled** every 20 ms with one 16-bit read per chip (no interrupt line), so expect about 20–40 ms of latency plus `debounce_ms`.
+- **Resilience:**
+  - The driver keeps shadow copies of the direction, pull-up and output latch registers.
+  - After an I2C error, or when the periodic check finds the chip was reset (a brown-out releases every output), it re-applies them, so relays return to their commanded state.
+  - A command that fails on the bus is reported back with the unchanged state.
+  - A chip that is absent at boot is configured when it starts answering. The daemon keeps running.
+- **Shutdown:** expander pins go back to inputs with latches low (the power-on state), as `RPi.GPIO.cleanup()` does for native pins.
+- **Not available on expander pins:** `pwm_output`.
+- **Compatibility spellings:** `default:` (for `initial:`), `homeassistant:` (for `ha:`) and `bcm:` (for `pin:`) are accepted, as written in the relay-bank examples.
 
 ## PWM outputs
 
