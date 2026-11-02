@@ -6,7 +6,6 @@ from __future__ import annotations
 def register_builtin_drivers() -> None:
     from mqttpi.sensors.drivers.cpu_temperature import CpuTemperatureDriver
     from mqttpi.sensors.drivers.ds18b20 import Ds18b20Driver
-<<<<<<< HEAD
     from mqttpi.sensors.drivers.i2c_climate import Bme280Driver, Bmp280Driver, Sht3xDriver, Sht4xDriver
     from mqttpi.can.mapping import CanFrameDriver
     from mqttpi.sensors.registry import register_driver

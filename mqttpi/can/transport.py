@@ -262,3 +262,4 @@ def stop_readers() -> None:
         for r in _readers.values():
             r.stop()
         _readers.clear()
+        _reader_refs.clear()
