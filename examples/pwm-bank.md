@@ -92,4 +92,4 @@ A: I2C uses GP0/GP1; PWM uses GP8–GP15. No overlap. SPI and I2S do conflict wi
 
 ## Implementation status
 
-**Config-only.** PWM frequencies, duty scaling, and HA **number** discovery are specified; the Pico W PWM runtime is not yet in this repository. Only the **BMS MQTT bridge** is fully implemented today.
+**Implemented in the Linux daemon:** `pwm_output` pins become HA **number** entities and are driven by software PWM, or by hardware PWM with `pwm_mode: hardware` ([daemon.md](../daemon.md#pwm-outputs)). A native Pico W firmware runtime is not in this repository yet.

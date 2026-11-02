@@ -1,0 +1,23 @@
+{
+  "homeassistant/number/n_fan/config": {
+    "availability_topic": "mqttpi/n/status",
+    "command_topic": "mqttpi/n/gpio/fan/set",
+    "device": {
+      "identifiers": [
+        "n"
+      ],
+      "manufacturer": "mqttpi",
+      "model": "pi4",
+      "name": "n"
+    },
+    "icon": "mdi:fan",
+    "max": 100.0,
+    "min": 0.0,
+    "mode": "slider",
+    "name": "Fan Speed",
+    "state_topic": "mqttpi/n/gpio/fan/state",
+    "step": 1.0,
+    "unique_id": "n_fan",
+    "unit_of_measurement": "%"
+  }
+}

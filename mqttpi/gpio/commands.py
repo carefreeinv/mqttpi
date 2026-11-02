@@ -186,3 +186,23 @@ def block_while(alias: str, input_alias: str, active: bool = True) -> CommandFil
 
     return block_while_filter
 
+
+
+def clamp_duty(alias: str, low: float = 0.0, high: float = 100.0) -> CommandFilter:
+    """Limit a ``pwm_output`` duty to ``low``..``high`` percent (0 always passes).
+
+    Example: cap a motor driver at 80 % or keep a fan above its stall speed.
+    """
+    if not 0 <= low <= high <= 100:
+        raise ValueError("clamp_duty needs 0 <= low <= high <= 100")
+
+    def clamp_duty_filter(req: CommandRequest) -> Optional[CommandDecision]:
+        if req.alias != alias or not req.value:
+            return None
+        value = float(req.value)
+        clamped = min(high, max(low, value))
+        if clamped != value:
+            return CommandDecision.modify(clamped, f"{alias} duty clamped to {low:g}-{high:g} %")
+        return None
+
+    return clamp_duty_filter

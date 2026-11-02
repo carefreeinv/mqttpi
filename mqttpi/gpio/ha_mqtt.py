@@ -44,11 +44,16 @@ class GpioMqttPublisher:
                 self._publish_switch_discovery(pin, device)
             elif pin.direction == "input":
                 self._publish_binary_sensor_discovery(pin, device)
+            elif pin.direction == "pwm_output":
+                self._publish_number_discovery(pin, device)
         log.info("Published HA discovery for %d GPIO entities", len(pins))
 
     def publish_state(self, alias: str, on: bool) -> None:
         payload = self.payload_on if on else self.payload_off
         self.mqtt.publish(self._state_topic(alias), payload)
+
+    def publish_duty(self, alias: str, duty: float) -> None:
+        self.mqtt.publish(self._state_topic(alias), format_duty(duty))
 
     def _device_block(self) -> Dict[str, Any]:
         block: Dict[str, Any] = {
@@ -106,3 +111,26 @@ class GpioMqttPublisher:
         if pin.ha_icon:
             payload["icon"] = pin.ha_icon
         self.mqtt.publish_json(self._discovery_topic("binary_sensor", pin.alias), payload)
+    def _publish_number_discovery(self, pin: PinConfig, device: Dict[str, Any]) -> None:
+        payload: Dict[str, Any] = {
+            "name": pin.ha_name,
+            "unique_id": f"{self.device_id}_{pin.alias}",
+            "command_topic": self._command_topic(pin.alias),
+            "state_topic": self._state_topic(pin.alias),
+            "min": pin.ha_min,
+            "max": pin.ha_max,
+            "step": pin.ha_step,
+            "mode": pin.ha_mode,
+            "unit_of_measurement": pin.ha_unit,
+            "availability_topic": self._availability_topic(),
+            "device": device,
+        }
+        if pin.ha_icon:
+            payload["icon"] = pin.ha_icon
+        self.mqtt.publish_json(self._discovery_topic("number", pin.alias), payload)
+
+
+def format_duty(duty: float) -> str:
+    """``40`` for whole numbers, otherwise up to two decimals (``12.5``)."""
+    d = round(float(duty), 2)
+    return str(int(d)) if d.is_integer() else f"{d:g}"

@@ -89,4 +89,4 @@ A: Same 50 Hz PWM; map 0–100 to speed/direction with different duty centers—
 
 ## Implementation status
 
-**Config-only.** Servo timing and HA discovery schema are defined; Pico W firmware to generate 50 Hz PWM is not yet in-tree. The **JBD BMS bridge** is the implemented MQTT component in this repo.
+**Partly implemented:** the daemon exposes these `pwm_output` pins as HA numbers and generates 50 Hz PWM (duty %). Software PWM jitters, so servos twitch. Use `pwm_mode: hardware` on a Pi hardware PWM pin for steady pulses. Pulse-width (µs) scaling for servos is not implemented yet.

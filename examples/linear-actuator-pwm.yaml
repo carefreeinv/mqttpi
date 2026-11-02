@@ -1,0 +1,70 @@
+# Linear actuator with speed control — Raspberry Pi + dual-PWM H-bridge driver
+# (two PWM inputs, e.g. "RPWM/LPWM" style boards). Same aliases as
+# linear-actuator.yaml, so examples/linear_actuator_interlock.py keeps
+# "extend" and "retract" from ever being above 0 % together.
+#
+#   cp examples/linear-actuator-pwm.yaml config.yaml
+#   python3 examples/linear_actuator_interlock.py -c config.yaml --mock-gpio -v
+#   python3 examples/linear_actuator_interlock.py -c config.yaml -v
+
+device:
+  id: actuator-01
+  board: pi4
+  ha:
+    name: "Linear Actuator"
+
+mqtt:
+  host: 192.168.1.50
+  port: 1883
+  base_topic: mqttpi/actuator-01
+  client_id: mqttpi-actuator-01
+  homeassistant:
+    discovery: true
+    discovery_prefix: homeassistant
+  retain: true
+  qos: 1
+
+pins:
+  # Direction + speed: duty 0-100 % on each H-bridge PWM input.
+  - pin: 12
+    alias: actuator_extend
+    direction: pwm_output
+    frequency_hz: 1000        # software PWM default; see daemon.md "PWM outputs"
+    initial_duty: 0
+    # pwm_mode: hardware      # needs dtoverlay=pwm-2chan,pin=12,func=4,pin2=13,func2=4
+    ha: { name: "Actuator Extend Speed", min: 0, max: 100, step: 5, unit_of_measurement: "%",
+          icon: "mdi:arrow-expand-horizontal" }
+
+  - pin: 13
+    alias: actuator_retract
+    direction: pwm_output
+    frequency_hz: 1000
+    initial_duty: 0
+    # pwm_mode: hardware
+    ha: { name: "Actuator Retract Speed", min: 0, max: 100, step: 5, unit_of_measurement: "%",
+          icon: "mdi:arrow-collapse-horizontal" }
+
+  # Driver enable lines (many dual-PWM boards have R_EN / L_EN). Tie high in
+  # hardware instead if you do not want them switchable.
+  - pin: 5
+    alias: actuator_enable
+    direction: output
+    initial: false
+    ha: { name: "Actuator Driver Enable", icon: "mdi:power" }
+
+  # Optional end stops: switch to GND, pull-up, invert → ON = limit reached.
+  - pin: 22
+    alias: limit_extended
+    direction: input
+    pull: up
+    invert: true
+    debounce_ms: 20
+    ha: { name: "Limit Extended" }
+
+  - pin: 23
+    alias: limit_retracted
+    direction: input
+    pull: up
+    invert: true
+    debounce_ms: 20
+    ha: { name: "Limit Retracted" }

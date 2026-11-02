@@ -53,6 +53,7 @@ For ready-made layouts, prefer [`examples/README.md`](examples/README.md) — ea
 | `mqtt.reconnect_min_s` / `mqtt.reconnect_max_s` | `1` / `60` s — background connect/reconnect backoff; the daemon starts even when the broker is down |
 | `mqtt.max_queued_messages` | `1000` — qos>0 messages buffered while disconnected (newest dropped when full; `0` = unbounded) |
 | `mqtt.homeassistant.discovery_node_id` | `false` — discovery on `homeassistant/<component>/<device.id>_<alias>/config` (unchanged). `true` (use `device.id`) or a string node id: `homeassistant/<component>/<node_id>/<alias>/config`, for per-node broker ACLs. `discovery_clear_legacy` (default `true`) empties the old-layout configs first. See [daemon.md](daemon.md#discovery-topics-and-per-node-acls) |
+| `pins[].direction: pwm_output` | HA `number` (0–100 %). `frequency_hz` (default `1000`), `initial_duty` (default `0`), `pwm_mode` (`software` default, `hardware` on GPIO 12/13/18/19 with a PWM overlay), `ha.min/max/step`. See [daemon.md](daemon.md#pwm-outputs) |
 | `sensors` | Absent. Numeric sensor entities: `sensors.<name>.type` (e.g. `cpu_temperature`), `publish.interval_ms` (default `30000`), `timeout_s`, `stale_after_s`, `readings.<key>.{alias, precision, ha}`; state on `{base_topic}/sensors/<alias>/state`. See [daemon.md](daemon.md#sensors-numeric-readings) |
 
 ---

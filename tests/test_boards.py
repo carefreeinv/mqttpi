@@ -74,6 +74,13 @@ def test_soft_warnings() -> None:
     assert "EEPROM" in w[0] and "no ADC" in w[1] and "hardware PWM" in w[2]
 
 
+def test_hardware_pwm_mode_needs_hardware_pin() -> None:
+    with pytest.raises(ValueError, match="not a hardware PWM pin"):
+        validate_pins(cfg("pizero", [{"pin": 6, "alias": "m", "direction": "pwm_output", "pwm_mode": "hardware"}]))
+    assert validate_pins(cfg("pizero", [{"pin": 6, "alias": "m", "direction": "pwm_output"}])) == []
+    validate_pins(cfg("pizero", [{"pin": 18, "alias": "m", "direction": "pwm_output", "pwm_mode": "hardware"}]))
+
+
 def test_all_errors_reported_together() -> None:
     with pytest.raises(ValueError) as exc:
         validate_pins(cfg("pi4", [{"pin": 40, "alias": "a"}, {"pin": "x", "alias": "b"}]))

@@ -150,12 +150,16 @@ def validate_pins(cfg: Dict[str, Any]) -> List[str]:
             errors.append(f"{label}: claimed by enabled {bus_pins[pin]}")
         if pin in board.reserved:
             warnings.append(f"{label}: {board.reserved[pin]}")
-        if direction == "analog" and pin not in board.adc:
+        if direction in ("analog", "analog_input") and pin not in board.adc:
             warnings.append(f"{label}: {board.name} has no ADC on this pin"
                             + ("" if board.adc else " (no ADC at all; use an external converter)"))
-        if direction == "pwm" and pin not in board.hardware_pwm:
-            warnings.append(f"{label}: not a hardware PWM pin on {board.name} "
-                            f"(hardware PWM: {_ranges(board.hardware_pwm)})")
+        if direction in ("pwm", "pwm_output") and pin not in board.hardware_pwm:
+            msg = (f"{label}: not a hardware PWM pin on {board.name} "
+                   f"(hardware PWM: {_ranges(board.hardware_pwm)})")
+            if entry.get("pwm_mode") == "hardware":
+                errors.append(msg)
+            elif direction == "pwm":
+                warnings.append(msg)
 
     for w in warnings:
         log.warning("Board %s: %s", board.key, w)
