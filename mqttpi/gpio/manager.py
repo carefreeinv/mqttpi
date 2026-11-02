@@ -282,11 +282,16 @@ class GpioManager:
         # invert: true → active-low (logical 100 % = pin LOW all the time).
         return 100.0 - duty if pin.invert else duty
 
+    @staticmethod
+    def _clamp_logical_duty(pin: PinConfig, duty: float) -> float:
+        """Keep live PWM inside HA min–max; 0 % always means off."""
+        return max(pin.ha_min if duty > 0 else 0.0, min(pin.ha_max, duty))
+
     def _apply_duty(self, alias: str, duty: float, source: str, payload: Optional[str] = None) -> float:
         pin = self._pwm_pins[alias]
         with self._command_lock:
             current = self._pwm_state.get(alias, 0.0)
-            clamped = max(pin.ha_min if duty > 0 else 0.0, min(pin.ha_max, duty))
+            clamped = self._clamp_logical_duty(pin, duty)
             if clamped != duty:
                 log.info("PWM %s: %g clamped to %g (range %g-%g)", alias, duty, clamped, pin.ha_min, pin.ha_max)
             duty = clamped
@@ -314,7 +319,7 @@ class GpioManager:
                 if new != duty:
                     log.info("Command %s → %s modified to %s: %s", alias, format_duty(duty), format_duty(new),
                              "; ".join(outcome.reasons) or "modified")
-                duty = max(0.0, min(pin.ha_max, new))
+                duty = self._clamp_logical_duty(pin, new)
             self._pwm[alias].set_duty(self._hw_duty(pin, duty))
             self._pwm_state[alias] = duty
         self.publisher.publish_duty(alias, duty)

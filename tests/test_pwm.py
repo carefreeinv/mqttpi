@@ -182,6 +182,13 @@ def test_pwm_stop_sets_zero(started) -> None:  # noqa: F811
     assert ch.duty == 0 and not ch.running
 
 
+def test_filter_duty_below_ha_min_is_reclamped(started) -> None:  # noqa: F811
+    mgr, _client = started([dict(FAN, ha={"min": 20, "max": 80})])
+    mgr.add_command_filter(lambda req: CommandDecision.modify(5.0, "nudge") if req.value else None)
+    assert mgr.request_duty("fan", 50) == 20
+    assert mgr.request_duty("fan", 0) == 0
+
+
 def test_pwm_commands_pass_filters(started) -> None:  # noqa: F811
     mgr, client = started([dict(FAN), dict(FAN, pin=19, alias="pump")])
     mgr.add_command_filter(clamp_duty("fan", 0, 70))
