@@ -8,11 +8,12 @@
 - **Depends on:** ha-numeric-sensor-entities
 
 ## Progress
-- [ ] Step 1: Decide scope with the owner (raw frames, RV-C decode, both)
-- [ ] Step 2: SocketCAN transport
-- [ ] Step 3: Frame-to-entity mapping from config
+- [x] Step 1: Decide scope with the owner (raw frames, RV-C decode, both)
+- [x] Step 2: SocketCAN transport
+- [x] Step 3: Frame-to-entity mapping from config
 - [ ] Step 4: Docs and test on `vcan0`
 - [ ] Done when holds
+- 2026-11-01 `/work` (named; Preferred reasoner, session mid): README Status matches shipped read-only `can_frame`; `close()` refcounts readers. `vcan0` still skipped here (no iface). RV-C / TX remain contracts.
 
 ## Goal
 The documented `buses.can` config contract works on Linux boards with an SPI CAN controller (MCP2515-class, exposed as SocketCAN): configured frames are decoded into numeric or binary entities and published through the shared sensor entities; sending frames is optional and goes through the command filter.
