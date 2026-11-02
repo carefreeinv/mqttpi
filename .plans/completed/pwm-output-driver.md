@@ -67,3 +67,6 @@ AI verdict: **ACCEPT**. Survey: Needs Work. No merge.
 `SoftwarePwm.stop()` 0% is done (`6f1892d`). Remaining:
 - Record the hardware bench (or park Step 4 / Done-when in this plan).
 - Optional: after-filter duty re-apply `ha.min` (`mqttpi/gpio/manager.py` ~317).
+
+## Handoff
+merged to dev by /review Approve 2026-11-01 — PRs 13–15

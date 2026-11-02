@@ -55,3 +55,6 @@ Python per `.anchor/conventions.md`: small composable classes, Protocols or narr
 - `pytest -q` passes
 - Relay-bank examples run with the fake expander
 - Bench result recorded
+
+## Handoff
+merged to dev by /review Approve 2026-11-01 — PRs 13–15

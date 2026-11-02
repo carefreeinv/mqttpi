@@ -72,3 +72,6 @@ Actionable:
 - `bmp280` must not advertise humidity. Split default entities from `bme280` (`mqttpi/sensors/drivers/i2c_climate.py`); assert parse_sensors for `type: bmp280` is temperature + pressure only.
 - Record (or waive) the hardware bench.
 - Optional: wrap DS18B20 missing sysfs as `IOError`; owner decision on implementing ADS1115/INA drivers (step 5).
+
+## Handoff
+merged to dev by /review Approve 2026-11-01 — PRs 13–15
