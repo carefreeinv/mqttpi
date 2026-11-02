@@ -54,9 +54,9 @@ Python per `.anchor/conventions.md`: small composable classes, Protocols or narr
 - Step looks overqualified for its assigned tier (boilerplate/rename/formatting on a frontier route) → downgrade to smaller/local model instead
 
 ## Done when
-- `pytest -q` passes, including `vcan0` tests on Linux
-- `examples/can-rvc.yaml` (mapped subset) runs against `vcan0`
-- Docs and changelog updated
+- `pytest -q` passes (Linux `vcan0` roundtrip is skipif when `/sys/class/net/vcan0` is missing)
+- `examples/can-frames.yaml` loads with the fake transport / `parse_sensors`
+- Docs and changelog describe read-only `can_frame` (RV-C / TX remain contracts)
 
 ## Review notes (/review 2026-11-02, PR #16, Needs Work — third pass)
 
